@@ -1,0 +1,27 @@
+{
+  "code": 0,
+  "msg": "success",
+  "data": [
+    {
+      "name": "1",
+      "couponBatchId": 21,
+      "type": 1,
+      "fullNum": "199.99",
+      "cutNum": "99",
+      "useNum": 0,
+      "sendNum": 0,
+      "totalNum": 1000000,
+      "status": 2,
+      "createTime": "2023-05-08 16:58:56",
+      "timeType": 1,
+      "isUse": "是否已占用 0 未占用 1 已占用",
+      "timeDesc": "2"
+    }
+  ],
+  "totalNum": 15,
+  "pageIndex": 1,
+  "pageSize": 10,
+  "totalPage": 2,
+  "error": false,
+  "success": true
+}

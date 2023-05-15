@@ -1,0 +1,224 @@
+<?php
+
+namespace App\Http\Controllers\Lptapp;
+
+use Illuminate\Support\Facades\Validator;
+use App\Models\LptApp\CouponActivity;
+use App\Services\PageServe;
+use App\Services\CouponActivityService;
+use App\Http\Controllers\TraitBackendOperation;
+
+use App\Http\Resources\LptApp\CouponActivityResource;
+use App\Http\Resources\LptApp\CouponActivityListResource;
+
+class CouponActivityController extends Controller
+{
+    use TraitBackendOperation;
+
+    /**
+     * @group v302-后台管理
+     *
+     * cb-l 课程券批次列表
+     *
+     * @queryParam curPage       int  当前页
+     * @queryParam endTime       string 活动结束时间
+     * @queryParam name          string 
+     * @queryParam pageSize      int  
+     * @queryParam startTime     string 活动开始时间
+     * @queryParam status        int  1-未开始；2-进行中；3-已结束；4-已失效
+     * @queryParam specialStatus int  
+     * @queryParam timeType      int  1-天数；2-起止时间
+     * @queryParam type          int  1-满减；2-立减
+     * @queryParam useTypes      int 使用类型；按业务线区分；具体可从“业务线优惠券类型”接口获取
+     *
+     * @responseFile responses/coupon/batch-list.json
+     */
+    public function batchList(PageServe $serve)
+    {
+        $service = new CouponActivityService();
+        //$datas = $service->getBatchList(request()->all());
+        $datas = $service->getCoupon(request()->all());
+        //$datas = $service->useCoupon([]);
+        //$datas = $service->getBatchType(request()->all());
+        $data = $datas['data'];
+        unset($datas['data']);
+        return responseJsonHttp(0, 'success', $data, $datas);
+    }
+
+    /**
+     * @group v302-后台管理
+     *
+     * ca-l 课程券活动列表
+     *
+     * @queryParam name optional string 活动名称
+     * @queryParam status optional string 活动状态[nopublish:未发布;nostart: 未开始;  finish: 已结束;running:进行中]
+     *
+     * @responseFile responses/coupon/coupon-activity-list.json
+     */
+    public function list(PageServe $serve)
+    {
+        $extData = [
+            'types' => $this->getModel()->getActivityTypeDatas(),
+            'status' => $this->getModel()->formatStatusDatas(),
+        ];
+        return $this->_index($serve, '', $extData);
+    }
+
+    /**
+     * @group v302-后台管理
+     *
+     * ca-a 添加课程券活动
+     *
+     * @bodyParam activity_type required string 活动类型
+     * @bodyParam name required string 活动名称
+     * @bodyParam batch_ids required string 关联的优惠券批次号，如 1,2,3
+     * @bodyParam picture_url required string 弹窗图片
+     * @bodyParam coupon_desc required string 券banner文案
+     * @bodyParam tag_desc required string 标签文案
+     * @bodyParam start_at required string 起始时间
+     * @bodyParam end_at required string 截止时间
+     *
+     * @response 400 {
+     * "code": 1,
+     * "message": "参数有误*",
+     * "data": {}
+     * }
+     * @response 200 {
+     * "code": 0,
+     * "message": "OK",
+     * "data": {}
+     * }
+     */
+    public function add()
+    {
+        $params = request()->all();
+        $validatorInfo = Validator::make($params, [
+            'name' => 'required|string',
+            'batch_ids' => 'required|string',
+            'activity_type' => 'required|in:new,event,back',
+        ]);
+        if ($validatorInfo->fails()) {
+            return responseJsonHttp(1, $validatorInfo->errors()->first());
+        }
+        $return = $this->getModel()->createActivityRecord($params);
+
+        return responseJsonHttp(0, 'success', $return);
+    }
+
+    /**
+     * @group v302-后台管理
+     *
+     * ca-u 编辑课程券活动
+     *
+     * @bodyParam id required string 信息ID
+     * @bodyParam activity_type string 活动类型
+     * @bodyParam name string 活动名称
+     * @bodyParam batch_ids string 关联的优惠券批次号，如 1,2,3
+     * @bodyParam picture_url string 弹窗图片
+     * @bodyParam coupon_desc string 券banner文案
+     * @bodyParam tag_desc string 标签文案
+     * @bodyParam start_at string 起始时间
+     * @bodyParam end_at string 截止时间
+     *
+     * @response 400 {
+     * "code": 1,
+     * "message": "参数有误*",
+     * "data": {}
+     * }
+     * @response 200 {
+     * "code": 0,
+     * "message": "OK",
+     * "data": {}
+     * }
+     */
+    public function update()
+    {
+        $params = request()->all();
+        $validatorInfo = Validator::make($params, [
+            'id' => 'required|exists:el_coupon_activity',
+            'activity_type' => 'nullable|in:new,event,back',
+        ]);
+        if ($validatorInfo->fails()) {
+            return responseJsonHttp(1, $validatorInfo->errors()->first());
+        }
+        $info = $this->getModel()->find($params['id']);
+        $result = $info->updateInfo($params);
+        return responseJsonHttp(200, 'success');
+    }
+
+    /**
+     * @group v302-后台管理
+     *
+     * ca-uc 取消课程券活动
+     *
+     * @bodyParam id required string 信息ID
+     *
+     * @response 400 {
+     * "code": 200,
+     * "message": "参数有误*",
+     * "data": {}
+     * }
+     * @response 200 {
+     * "code": 200,
+     * "message": "OK",
+     * "data": {}
+     * }
+     */
+    public function cancel()
+    {
+        $params = request()->all();
+        $validatorInfo = Validator::make($params, [
+            'id' => 'required|exists:el_coupon_activity',
+        ]);
+        if ($validatorInfo->fails()) {
+            return responseJsonHttp(1, $validatorInfo->errors()->first());
+        }
+        $info = $this->getModel()->find($params['id']);
+        $info->status = 0;
+        $info->save();
+        return responseJsonHttp(0, 'success');
+    }
+
+    protected function getResource($datas, $type = '')
+    {
+        switch ($type) {
+        case 'listinfo':
+            return CouponActivityListResource::collection($datas);
+        default:
+            return CouponActivityResource::collection($datas);
+        }
+    }
+
+    protected function getModel()
+    {
+        return new CouponActivity();
+    }
+
+    public function test()
+    {
+        $basePath = base_path();
+        $midPath = '/home/www/selfpath/sale/';
+        $targetPath = '/usr/local/nginx/html/sale';
+        $files = file($basePath . '/public/docs/publish.txt');
+        $cpCommand = $publishCommand = '';
+        foreach ($files as $file) {
+            $file = trim($file);
+            $midFile = "{$midPath}/{$file}";
+            $mPath = dirname($midFile);
+            if (!is_dir($mPath)) {
+                $cpCommand .= "mkdir {$mPath} -p;\n";
+            }
+            $cpCommand .= "cp {$basePath}/{$file} {$midFile}\n";
+
+            $tFile = "{$targetPath}/{$file}";
+            $tPath = dirname($tFile);
+            if (!is_dir($tPath)) {
+                $publishCommand .= "mkdir {$tPath};\n";
+            }
+            $publishCommand .= "cp {$basePath}/{$file} {$tFile}\n";
+        }
+        echo $cpCommand;
+        //echo $publishCommand;
+        exit();
+    }
+}
