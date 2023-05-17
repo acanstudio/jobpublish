@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Lptapp;
 
 use App\Models\LptApp\CouponActivityUser;
 use App\Services\PageServe;
+use Illuminate\Http\Request;
 use App\Http\Controllers\TraitBackendOperation;
 
 use App\Http\Resources\LptApp\CouponActivityUserResource;
@@ -23,11 +24,24 @@ class CouponActivityUserController extends Controller
      *
      * @responseFile responses/coupon/coupon-activity-user-list.json
      */
-    public function list(PageServe $serve)
+    public function list(Request $request)
     {
+        $data = $this->getModel()->query()
+			->orderByDesc('id')
+			->paginate($request->input('per_page',10));
+
+		$data->map(function ($item){
+            $item->user_name = $item->userInfo ? $item->userInfo->user_name : '';
+            $item->status = $item->formatStatus();
+            $item->brief = $item->formatBrief();
+            $item->channel = $item->formatChannel();
+            $item->created_at = $item->created_at->toDateTimeString();
+
+			return $item;
+		});
+
+        return response()->json(['status' => 0, 'msg' => '成功', 'data' => $data]);
         return $this->_index($serve);
-        $return = [];
-        return responseJsonHttp(200, 'success', $return);
     }
 
     protected function getResource($datas, $type = '')

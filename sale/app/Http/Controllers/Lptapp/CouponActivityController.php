@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Lptapp;
 
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Request;
 use App\Models\LptApp\CouponActivity;
 use App\Services\PageServe;
 use App\Services\CouponActivityService;
@@ -36,13 +37,11 @@ class CouponActivityController extends Controller
     public function batchList(PageServe $serve)
     {
         $service = new CouponActivityService();
-        //$datas = $service->getBatchList(request()->all());
-        $datas = $service->getCoupon(request()->all());
+        $datas = $service->getBatchList(request()->all());
+        //$datas = $service->getCoupon(request()->all());
         //$datas = $service->useCoupon([]);
         //$datas = $service->getBatchType(request()->all());
-        $data = $datas['data'];
-        unset($datas['data']);
-        return responseJsonHttp(0, 'success', $data, $datas);
+        return response()->json(['status' => 0, 'msg' => '成功', 'data' => $datas]);
     }
 
     /**
@@ -55,13 +54,28 @@ class CouponActivityController extends Controller
      *
      * @responseFile responses/coupon/coupon-activity-list.json
      */
-    public function list(PageServe $serve)
+    public function list(PageServe $serve, Request $request)
     {
         $extData = [
             'types' => $this->getModel()->getActivityTypeDatas(),
             'status' => $this->getModel()->formatStatusDatas(),
         ];
-        return $this->_index($serve, '', $extData);
+
+        $data = $this->getModel()->query()
+			->orderByDesc('id')
+			->paginate($request->input('per_page',10));
+
+		$data->map(function ($item){
+            $item->activity_type_value = $item->getActivityTypeDatas($item->activity_type);
+            $item->status_value = $item->formatStatus();
+            $item->created_at = $item->created_at->toDateTimeString();
+            $item->expiration_date = $item->formatExpiration();
+
+			return $item;
+		});
+        //$data['extData'] = $extData;
+
+        return response()->json(['status' => 0, 'msg' => '成功', 'data' => $data]);
     }
 
     /**
@@ -102,7 +116,7 @@ class CouponActivityController extends Controller
         }
         $return = $this->getModel()->createActivityRecord($params);
 
-        return responseJsonHttp(0, 'success', $return);
+		return response()->json(['status' => 0, 'msg' => '添加成功', 'data' => (object)[]]);
     }
 
     /**
@@ -143,7 +157,7 @@ class CouponActivityController extends Controller
         }
         $info = $this->getModel()->find($params['id']);
         $result = $info->updateInfo($params);
-        return responseJsonHttp(200, 'success');
+		return response()->json(['status' => 0, 'msg' => '保存成功', 'data' => (object)[]]);
     }
 
     /**
@@ -152,6 +166,7 @@ class CouponActivityController extends Controller
      * ca-uc 取消课程券活动
      *
      * @bodyParam id required string 信息ID
+     * @bodyParam cancel required int 1: 取消发布; 0 ：或其他值为发布当前活动
      *
      * @response 400 {
      * "code": 200,
@@ -164,7 +179,7 @@ class CouponActivityController extends Controller
      * "data": {}
      * }
      */
-    public function cancel()
+    public function publish()
     {
         $params = request()->all();
         $validatorInfo = Validator::make($params, [
@@ -174,9 +189,9 @@ class CouponActivityController extends Controller
             return responseJsonHttp(1, $validatorInfo->errors()->first());
         }
         $info = $this->getModel()->find($params['id']);
-        $info->status = 0;
+        $info->status = isset($params['cancel']) && $params['cancel'] == 1 ? 0 : 1;
         $info->save();
-        return responseJsonHttp(0, 'success');
+		return response()->json(['status' => 0, 'msg' => '保存成功', 'data' => (object)[]]);
     }
 
     protected function getResource($datas, $type = '')
@@ -200,13 +215,17 @@ class CouponActivityController extends Controller
         $midPath = '/home/www/selfpath/sale/';
         $targetPath = '/usr/local/nginx/html/sale';
         $files = file($basePath . '/public/docs/publish.txt');
-        $cpCommand = $publishCommand = '';
+        $cpCommand = $publishCommand = $sCommand = '';
         foreach ($files as $file) {
             $file = trim($file);
             $midFile = "{$midPath}/{$file}";
             $mPath = dirname($midFile);
             if (!is_dir($mPath)) {
                 $cpCommand .= "mkdir {$mPath} -p;\n";
+            }
+            $sFile = $targetPath . '/' . $file;
+            if (file_exists($sFile)) {
+                $sCommand .= "cp {$sFile} {$midFile}\n";
             }
             $cpCommand .= "cp {$basePath}/{$file} {$midFile}\n";
 
@@ -217,8 +236,9 @@ class CouponActivityController extends Controller
             }
             $publishCommand .= "cp {$basePath}/{$file} {$tFile}\n";
         }
-        echo $cpCommand;
-        //echo $publishCommand;
+        file_put_contents($basePath . '/public/docs/source.sh', $sCommand);
+        file_put_contents($basePath . '/public/docs/cp.sh', $cpCommand);
+        file_put_contents($basePath . '/public/docs/publish.sh', $publishCommand);
         exit();
     }
 }

@@ -12,8 +12,25 @@ class CouponActivityService
     {
         //$url = '/api/couponBatch/page';
         $url = '/api/couponBatch/pageForPlat';
-        $result = $this->fetchRemoteData($url, $where);
+        $resultSource = $this->fetchRemoteData($url, $where);
+        $result = $rData = [];
+        foreach ($resultSource['data'] as $data) {
+            $brief = $data['type'] == 1 ? '满减' : '立减';
+            $brief .= $data['type'] == 1 ? ' ' . $data['cutNum'] : " {$data['fullNum']} - {$data['cutNum']}";
+            $data['brief'] = $brief;
+            $data['isUse'] = rand(0, 1);
+            $rData[] = $data;
+        }
+        $result = [
+            'current_page' => $resultSource['pageIndex'],
+            'from' => $resultSource['pageIndex'],
+            'total' => $resultSource['totalNum'],
+            'per_page' => $resultSource['pageSize'],
+            'to' => $resultSource['totalPage'],
+            'data' => $rData,
+        ];
         return $result;
+        return ['data' => $result];
     }
 
     public function getBatchType($where)

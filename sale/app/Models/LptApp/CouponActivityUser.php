@@ -13,6 +13,11 @@ class CouponActivityUser extends Model
 
     protected $guarded = ['id'];
 
+    public function formatBrief()
+    {
+        return '';
+    }
+
     public function formatStatus()
     {
         return '';

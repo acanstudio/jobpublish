@@ -121,4 +121,15 @@ class CouponActivity extends Model
         $batches = $this-batchDatas;
         return true;
     }
+
+    public function formatExpiration()
+    {
+        if (empty($this->start_at) && empty($this->end_at)) {
+            return '一直有效';
+        }
+        $str = '';
+        $str .= !empty($this->start_at) ? "{$this->start_at} 开始" : '';
+        $str .= !empty($this->end_at) ? "{$this->end_at} 结束" : '';
+        return $str;
+    }
 }
