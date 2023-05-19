@@ -270,34 +270,51 @@ class CouponActivityController extends Controller
 
     public function test()
     {
-        $basePath = base_path();
-        $midPath = '/home/www/selfpath/sale/';
-        $targetPath = '/usr/local/nginx/html/sale';
-        $files = file($basePath . '/public/docs/publish.txt');
-        $cpCommand = $publishCommand = $sCommand = '';
-        foreach ($files as $file) {
-            $file = trim($file);
-            $midFile = "{$midPath}/{$file}";
-            $mPath = dirname($midFile);
-            if (!is_dir($mPath)) {
-                $cpCommand .= "mkdir {$mPath} -p;\n";
-            }
-            $sFile = $targetPath . '/' . $file;
-            if (file_exists($sFile)) {
-                $sCommand .= "cp {$sFile} {$midFile}\n";
-            }
-            $cpCommand .= "cp {$basePath}/{$file} {$midFile}\n";
+        $midPath = '/home/www/selfpath/';
+        $elems = [
+            'old' => [
+                'basePath' => '/usr/local/nginx/html/selfdev_liupin/',
+                'targetPath' => '/usr/local/nginx/html/old.liupinshuyuan.com/',
+            ],
+            'sale' => [
+                'basePath' => base_path(),
+                'targetPath' => '/usr/local/nginx/html/sale',
+            ],
+        ];
 
-            $tFile = "{$targetPath}/{$file}";
-            $tPath = dirname($tFile);
-            if (!is_dir($tPath)) {
-                $publishCommand .= "mkdir {$tPath};\n";
+        foreach ($elems as $elem => $eInfo) {
+            $basePath = $eInfo['basePath'];
+            $targetPath = $eInfo['targetPath'];
+            $files = file($midPath . "/{$elem}.txt");
+            $cpCommand = $publishCommand = $sCommand = $testCommand = '';
+            foreach ($files as $file) {
+                $file = trim($file);
+                $midFile = "{$midPath}/{$elem}/{$file}";
+                $mPath = dirname($midFile);
+                if (!is_dir($mPath)) {
+                    $cpCommand .= "mkdir {$mPath} -p;\n";
+                }
+                $sFile = $targetPath . '/' . $file;
+                if (true) {//file_exists($sFile)) {
+                    $sCommand .= "cp {$sFile} {$midFile}\n";
+                }
+                $cpCommand .= "cp {$basePath}/{$file} {$midFile}\n";
+    
+                $tFile = "{$targetPath}/{$file}";
+                $tPath = dirname($tFile);
+                if (!is_dir($tPath)) {
+                    $publishCommand .= "mkdir {$tPath};\n";
+                }
+                $publishCommand .= "cp {$basePath}/{$file} {$tFile}\n";
+                $testCommand .= "cp {$tFile} {$basePath}/{$file}\n";
             }
-            $publishCommand .= "cp {$basePath}/{$file} {$tFile}\n";
+            echo $sCommand . "\n";
+            echo 'fff';
+            file_put_contents($midPath . "/{$elem}-source.sh", $sCommand);
+            file_put_contents($midPath . "/{$elem}-cp.sh", $cpCommand);
+            file_put_contents($midPath . "/{$elem}-publish.sh", $publishCommand);
+            file_put_contents($midPath . "/{$elem}-test.sh", $testCommand);
         }
-        file_put_contents($basePath . '/public/docs/source.sh', $sCommand);
-        file_put_contents($basePath . '/public/docs/cp.sh', $cpCommand);
-        file_put_contents($basePath . '/public/docs/publish.sh', $publishCommand);
         exit();
     }
 }
