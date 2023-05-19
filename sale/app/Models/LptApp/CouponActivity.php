@@ -26,7 +26,7 @@ class CouponActivity extends Model
             }
             $data[$field] = $value;
         }
-        $data['status'] = 1;
+        //$data['status'] = 1;
         $info = $this->create($data);
         $batchIds = $params['batch_ids'] ?? '';
         $info->createBatch($info, $batchIds);
@@ -112,10 +112,10 @@ class CouponActivity extends Model
         return '进行中';
     }
 
-    /*public function batchDatas()
+    public function batchDatas()
     {
         return $this->hasMany(CouponActivityBatch::class, 'coupon_activity_id', 'id');
-    }*/
+    }
 
     public function formatExpiration()
     {
@@ -137,6 +137,7 @@ class CouponActivity extends Model
         foreach ($batchDatas as $batch) {
             $results[] = [
                 'name' => $batch['name'],
+                'brief' => $batch['brief'],
                 'status_value' => $statusValues[$batch['status']] ?? $batch['status'],
                 'total_num' => $batch['total_num'],
                 'time_desc' => $batch['time_type'] == 1 ? "{$batch['time_desc']} 天内有效" : $batch['time_desc'],

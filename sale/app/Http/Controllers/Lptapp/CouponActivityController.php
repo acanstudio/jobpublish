@@ -83,14 +83,45 @@ class CouponActivityController extends Controller
      */
     public function list(PageServe $serve, Request $request)
     {
-        $extData = [
+        /*$extData = [
             'types' => $this->getModel()->getActivityTypeDatas(),
             'status' => $this->getModel()->formatStatusDatas(),
-        ];
+        ];*/
+        $name = request()->input('name', '');
+        $query = $this->getModel()->query();
+        if (!empty($name)) {
+            $query = $query->where('name', 'like', "%{$name}%");
+        }
+        $status = request()->input('status', '');
+        $cDate = date('Y-m-d H:i:s');
+        if (!empty($status)) {
+            switch ($status) {
+            case 'nopublish':
+                $query = $query->where(['status' => 0]);
+                break;
+            case 'nostart':
+                $query = $query->where('start_at', '>', $cDate);
+                break;
+            case 'running':
+                $query = $query->where(function ($query) use ($cDate) {
+                    $query->whereNull('end_at')->whereOr('end_at', '>', $cDate);
+                })->where(function($query) {
+                    $query->whereHasIn('batchDatas', function ($query) {
+                        return $query->whereColumn('total_num', '>', 'send_num')->where('status', 2);
+                    });
+                });
+                break;
+            case 'finish':
+                $query = $query->whereNotNull('end_at')->where('end_at', '<', $cDate)->where(function($query) {
+                    $query->whereHasIn('batchDatas', function ($query) {
+                        return $query->whereColumn('total_num', '<=', 'send_num')->orWhere('status', '<>', 2);
+                    });
+                });
+                break;
+            }
+        }
 
-        $data = $this->getModel()->query()
-			->orderByDesc('id')
-			->paginate($request->input('per_page',10));
+        $data = $query->orderByDesc('id')->paginate($request->input('per_page',10));
 
 		$data->map(function ($item){
             $item->activity_type_value = $item->getActivityTypeDatas($item->activity_type);

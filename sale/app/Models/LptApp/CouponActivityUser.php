@@ -13,6 +13,16 @@ class CouponActivityUser extends Model
 
     protected $guarded = ['id'];
 
+    public function couponActivityBatch()
+    {
+        return $this->belongsTo(CouponActivityBatch::class, 'batch_id', 'id');
+    }
+
+    public function couponActivity()
+    {
+        return $this->belongsTo(CouponActivity::class, 'activity_id', 'id');
+    }
+
     public function formatBrief()
     {
         return '';

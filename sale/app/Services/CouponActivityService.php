@@ -9,6 +9,22 @@ use App\Models\LptApp\CouponActivityBatch;
 
 class CouponActivityService
 {
+    public function getOrderCoupon($orderid, $returnType = 'simple')
+    {
+        $uModel = new CouponActivityUser();
+        $info = $uModel->where(['orderid' => $orderid])->orderBy('id', 'desc')->first();
+        if (empty($info)) {
+            return '';
+        }
+        $batch = $info->couponActivityBatch;
+        if ($returnType == 'simple') {
+            return $batch['brief'] . ' / ' . $info['name'];
+        } else if ($returnType == 'show') {
+            return $batch['brief'] . ' / ' . $info['name'] . ' / ' . $info['coupon'];
+        }
+        return $info;
+    }
+
     public function getBatchList($where)
     {
         //$url = '/api/couponBatch/page';
@@ -106,6 +122,13 @@ class CouponActivityService
             $exist->use_num = $info['useNum'];
             $exist->send_num = $info['sendNum'];
             $exist->total_num = $info['totalNum'];
+            $exist->time_type = $info['timeType'];
+            $exist->time_desc = $info['timeDesc'];
+            if ($info['timeType'] == 2) {
+                $tInfo = explode(',', $info['timeDesc']);
+                $exist->start_at = $tInfo[0];
+                $exist->end_at = $tInfo[1];
+            }
             $exist->save();
 
         }
