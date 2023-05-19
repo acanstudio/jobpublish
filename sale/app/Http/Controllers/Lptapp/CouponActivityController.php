@@ -19,6 +19,33 @@ class CouponActivityController extends Controller
     /**
      * @group v302-后台管理
      *
+     * cc-n 优惠券批次信息更新通知
+     *
+     * @queryParam batchId required int 批次ID
+     *
+     * @response 200 {
+     * "code": 0,
+     * "message": "OK",
+     * "data": {}
+     * }
+     */
+    public function couponNotice()
+    {
+        $batchId = request()->input('id');
+        //print_r(request()->all());
+        $bStr = serialize(request()->all());//is_array($batchId) ? serialize($batchId) : $batchId;
+        \Log::debug('batch-id-' . $bStr);
+        if (empty($batchId)) {
+		    return response()->json(['status' => 0, 'msg' => '成功0', 'data' => (object)[]]);
+        }
+        $service = new CouponActivityService();
+        $service->dealNotice($batchId);
+		return response()->json(['status' => 0, 'msg' => '成功1', 'data' => (object)[]]);
+    }
+
+    /**
+     * @group v302-后台管理
+     *
      * cb-l 课程券批次列表
      *
      * @queryParam curPage       int  当前页
@@ -71,6 +98,7 @@ class CouponActivityController extends Controller
             $item->created_at = $item->created_at->toDateTimeString();
             $item->expiration_date = $item->formatExpiration();
 
+            $item->batch_infos = $item->getBatchDatas();
 			return $item;
 		});
         //$data['extData'] = $extData;

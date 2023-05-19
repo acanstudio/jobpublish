@@ -135,6 +135,8 @@ return [
                 'coupon-activity-cancel',
                 
                 'coupon-activity-user-list',
+                'coupon-activity-user-export',
+                'proxy-coupon-notice',
                 // 'users.index', 'healthcheck*'
             ],
 

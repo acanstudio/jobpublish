@@ -5,6 +5,7 @@ namespace App\Services;
 use GuzzleHttp\Client;
 use App\Exceptions\BusinessException;
 use App\Models\LptApp\CouponActivityUser;
+use App\Models\LptApp\CouponActivityBatch;
 
 class CouponActivityService
 {
@@ -14,11 +15,16 @@ class CouponActivityService
         $url = '/api/couponBatch/pageForPlat';
         $resultSource = $this->fetchRemoteData($url, $where);
         $result = $rData = [];
+        $statusValues = [1 => '未开始', 2 => '进行中', 3 => '已结束', 4 => '已失效'];
+        $batchModel = new CouponActivityBatch();
         foreach ($resultSource['data'] as $data) {
             $brief = $data['type'] == 1 ? '满减' : '立减';
             $brief .= $data['type'] == 1 ? ' ' . $data['cutNum'] : " {$data['fullNum']} - {$data['cutNum']}";
             $data['brief'] = $brief;
-            $data['isUse'] = rand(0, 1);
+            $data['statusValue'] = $statusValues[$data['status']] ?? $data['status'];
+            $data['timeDesc'] = $data['timeType'] == 1 ? "{$data['timeDesc']} 天内有效" : $data['timeDesc'];
+            $exist = $batchModel->where(['batch_id' => $data['couponBatchId']])->first();
+            $data['isUse'] = $exist ? 1 : 0;
             $rData[] = $data;
         }
         $result = [
@@ -30,7 +36,6 @@ class CouponActivityService
             'data' => $rData,
         ];
         return $result;
-        return ['data' => $result];
     }
 
     public function getBatchType($where)
@@ -82,6 +87,29 @@ class CouponActivityService
         //$result = json_decode('{"status":-1,"msg":"\u9519\u8bef\u7528\u6237\uff01","data":null,"totalNum":null,"pageIndex":null,"pageSize":null,"totalPage":null,"error":true,"success":false}{"code":0,"msg":"success","data":{},"totalNum":null,"pageIndex":null,"pageSize":null,"totalPage":null,"error":true,"success":false}', true);
         //var_dump($result);
         return $result;
+    }
+
+    public function dealNotice($batchId)
+    {
+        $batchIds = is_array($batchId) ? $batchId : array_filter(explode(',', $batchId));
+        $infos = $this->getBatchList(['couponBatchIds' => $batchIds]);
+        $infos = $infos['data'] ?? [];
+        $model = new CouponActivityBatch();
+        foreach ($infos as $info) {
+            $exist = $model->where(['batch_id' => $info['couponBatchId']])->first();
+            if (empty($exist)) {
+                continue;
+            }
+            $exist->name = $info['name'];
+            $exist->brief = $info['brief'];
+            $exist->status = $info['status'];
+            $exist->use_num = $info['useNum'];
+            $exist->send_num = $info['sendNum'];
+            $exist->total_num = $info['totalNum'];
+            $exist->save();
+
+        }
+        return true;
     }
 
     public function fetchRemoteData($url, $data = [], $throw = true)

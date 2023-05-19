@@ -1,27 +1,29 @@
 {
-  "code": 0,
-  "msg": "success",
-  "data": [
-    {
-      "name": "1",
-      "couponBatchId": 21,
-      "type": 1,
-      "fullNum": "199.99",
-      "cutNum": "99",
-      "useNum": 0,
-      "sendNum": 0,
-      "totalNum": 1000000,
-      "status": 2,
-      "createTime": "2023-05-08 16:58:56",
-      "timeType": 1,
-      "isUse": "是否已占用 0 未占用 1 已占用",
-      "timeDesc": "2"
-    }
-  ],
-  "totalNum": 15,
-  "pageIndex": 1,
-  "pageSize": 10,
-  "totalPage": 2,
-  "error": false,
-  "success": true
+  "status": 0,
+  "msg": "成功",
+  "data": {
+    "current_page": 1,
+    "from": 1,
+    "total": 16,
+    "per_page": 10,
+    "to": 2,
+    "data": [
+      {
+        "name": "test111",
+        "couponBatchId": 22,
+        "type": 1,
+        "fullNum": "100",
+        "cutNum": "1",
+        "useNum": 0,
+        "sendNum": 0,
+        "totalNum": 60,
+        "status": 4,
+        "createTime": "2023-05-13 16:00:03",
+        "timeType": 1,
+        "timeDesc": "10",
+        "brief": "满减 1",
+        "isUse": 1
+      }
+    ]
+  }
 }

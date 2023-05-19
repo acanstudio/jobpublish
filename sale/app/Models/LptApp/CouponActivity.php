@@ -53,6 +53,8 @@ class CouponActivity extends Model
             ];
             $newModel->create($data);
         }
+        $service = new CouponActivityService();
+        $service->dealNotice($batchIds);
         return true;
     }
 
@@ -110,17 +112,10 @@ class CouponActivity extends Model
         return '进行中';
     }
 
-    public function batchDatas()
+    /*public function batchDatas()
     {
         return $this->hasMany(CouponActivityBatch::class, 'coupon_activity_id', 'id');
-    }
-
-    public function updateBatchInfo()
-    {
-        $service = CouponActivityService();
-        $batches = $this-batchDatas;
-        return true;
-    }
+    }*/
 
     public function formatExpiration()
     {
@@ -131,5 +126,22 @@ class CouponActivity extends Model
         $str .= !empty($this->start_at) ? "{$this->start_at} 开始" : '';
         $str .= !empty($this->end_at) ? "{$this->end_at} 结束" : '';
         return $str;
+    }
+
+    public function getBatchDatas()
+    {
+        $batchDatas = CouponActivityBatch::where(['coupon_activity_id' => $this->id])->get();
+        $results = [];
+        $statusValues = [1 => '未开始', 2 => '进行中', 3 => '已结束', 4 => '已失效'];
+
+        foreach ($batchDatas as $batch) {
+            $results[] = [
+                'name' => $batch['name'],
+                'status_value' => $statusValues[$batch['status']] ?? $batch['status'],
+                'total_num' => $batch['total_num'],
+                'time_desc' => $batch['time_type'] == 1 ? "{$batch['time_desc']} 天内有效" : $batch['time_desc'],
+            ];
+        }
+        return $results;
     }
 }
