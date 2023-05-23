@@ -58,8 +58,9 @@ class CouponActivityController extends Controller
      */
     public function batchList(PageServe $serve)
     {
+        $actvityType = request()->input('activity_type', '');
         $service = new CouponActivityService();
-        $datas = $service->getBatchList(request()->all());
+        $datas = $service->getBatchList(request()->all(), $actvityType);
         //$datas = $service->getCoupon(request()->all());
         //$datas = $service->useCoupon([]);
         //$datas = $service->getBatchType(request()->all());
