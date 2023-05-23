@@ -86,30 +86,38 @@ class CouponActivityModel extends Model
         return $result;
     }
 
-    public function applyCoupon($uid)
+    public function getUserType($uid)
     {
         $user = M('user')->where(['uid'=>$uid])->find();
         $isNew = $this->isNew($user);
         if ($isNew) {
-            return $this->dispatchCoupon($user, 'new');
+            return 'new';
         }
+
         $isBack = $this->isBack($user);
         if ($isBack) {
-            return dispatchCoupon($user, 'back');
+            return 'back';
         }
-        return dispatchCoupon($user, 'event');
+        return 'event';
+    }
+
+    public function applyCoupon($uid)
+    {
+        $user = M('user')->where(['uid'=>$uid])->find();
+        $type = $this->getUserType($uid);
+        return dispatchCoupon($user, $type);
     }
 
     public function isNew($user)
     {
         $uid = $user['uid'];
         $cTime = time();
-        $loginInfo = M('login')->where(['uid' => $uid, 'oauth_token_secret_program'])->find();
+        $loginInfo = M('login')->where(['uid' => $uid])->where('oauth_token_secret_program', '<>', '')->find();
         if (empty($loginInfo) || empty($loginInfo->time_l)) {
             return true;
         }
         $diff = time() - $loginInfo->time_l;
-        if ($diff < 86400 * 5) {
+        if ($diff < 86400 * 1) {
             return true;
         }
         return false;
@@ -118,12 +126,13 @@ class CouponActivityModel extends Model
     public function isBack($user)
     {
         $cTime = time();
-        $lastLoginTime = $user['last_login_time'];
+        $info = M('dk_user_info')->where(['uid' => $user['uid']])->find();
+        $lastLoginTime = $info['last_login_time'];
         if (empty($lastLoginTime)) {
             return true;
         }
-        $diff = $cTime - $lastLoginTime;
-        if ($diff >= 86400 * 10) {
+        $diff = $cTime - strtotime($lastLoginTime);
+        if ($diff >= 86400 * 30) {
             return true;
         }
         return false;
@@ -243,5 +252,18 @@ class CouponActivityModel extends Model
             'max_discount' => rand(10, 100),
             'coupon_list' => isset($couponLists['available']) ? $couponLists['available'] : [],
         ];
+    }
+
+    public function orderCouponInfo($orderId, $returnType = 'money')
+    {
+        $infos = M('coupon_activity_user')->where(['orderid' => $orderId])->select();
+        if ($returnType == 'money') {
+            $money = 0;
+            foreach ($infos as $info) {
+                $money += $info['money'];
+            }
+            return $money;
+        }
+        return $infos;
     }
 }
