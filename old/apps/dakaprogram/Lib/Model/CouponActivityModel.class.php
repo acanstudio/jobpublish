@@ -40,12 +40,13 @@ class CouponActivityModel extends Model
             $activity = M('coupon_activity')->where(['id' => $info['activity_id']])->find();
             $batch = M('coupon_activity_batch')->where(['id' => $info['batch_id']])->select();
             $data = [
-                'money' => $info['money'],
+                'name' => $info['name'],
                 'brief' => $batch ? $batch['brief'] : '',
+                'money' => $info['money'],
                 'expireAt' => '2天后',
                 'isNotice' => rand(0, 1),
             ];
-            $sort = ['used', 'availabe'][rand(0, 1)];
+            $sort = ['used', 'available'][rand(0, 1)];
             $results[$sort][] = $data;
         }
         return $results;
@@ -196,9 +197,7 @@ class CouponActivityModel extends Model
                 'updated_at' => $cDate,
                 'uid' => $cData['platUid'],
             ];
-            print_r($cData);
             $r = M('coupon_activity_user')->add($cData);
-            var_dump($r);
         }
         return true;
     }
@@ -233,5 +232,16 @@ class CouponActivityModel extends Model
             return false;
         }
         return $result;
+    }
+
+    public function courseCouponInfo($uid)
+    {
+        $couponLists = $this->getMyCoupons($uid);
+        return [
+            'coupon_num' => rand(0, 10),
+            'coupon_title' => ['', '新人特惠，最高省100元'][rand(0, 1)],
+            'max_discount' => rand(10, 100),
+            'coupon_list' => isset($couponLists['available']) ? $couponLists['available'] : [],
+        ];
     }
 }
