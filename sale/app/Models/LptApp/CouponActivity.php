@@ -4,14 +4,10 @@ namespace App\Models\LptApp;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Traits\CommonOperationTrait;
-use App\Services\PageServe;
 use App\Services\CouponActivityService;
 
 class CouponActivity extends Model
 {
-    use CommonOperationTrait;
-
     protected $table = 'el_coupon_activity';
     protected $guarded = ['id'];
 

@@ -7,14 +7,9 @@ use Illuminate\Http\Request;
 use App\Models\LptApp\CouponActivity;
 use App\Services\PageServe;
 use App\Services\CouponActivityService;
-use App\Http\Controllers\TraitBackendOperation;
-
-use App\Http\Resources\LptApp\CouponActivityResource;
-use App\Http\Resources\LptApp\CouponActivityListResource;
 
 class CouponActivityController extends Controller
 {
-    use TraitBackendOperation;
 
     /**
      * @group v302-后台管理
@@ -251,16 +246,6 @@ class CouponActivityController extends Controller
         $info->status = isset($params['cancel']) && $params['cancel'] == 1 ? 0 : 1;
         $info->save();
 		return response()->json(['status' => 0, 'msg' => '保存成功', 'data' => (object)[]]);
-    }
-
-    protected function getResource($datas, $type = '')
-    {
-        switch ($type) {
-        case 'listinfo':
-            return CouponActivityListResource::collection($datas);
-        default:
-            return CouponActivityResource::collection($datas);
-        }
     }
 
     protected function getModel()

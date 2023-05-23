@@ -1,13 +1,9 @@
 cp /usr/local/nginx/html/selfdev_can_sale/app/Exceptions/BusinessException.php /home/www/selfpath//sale/app/Exceptions/BusinessException.php
 cp /usr/local/nginx/html/selfdev_can_sale/app/Http/Controllers/Lptapp/CouponActivityController.php /home/www/selfpath//sale/app/Http/Controllers/Lptapp/CouponActivityController.php
 cp /usr/local/nginx/html/selfdev_can_sale/app/Http/Controllers/Lptapp/CouponActivityUserController.php /home/www/selfpath//sale/app/Http/Controllers/Lptapp/CouponActivityUserController.php
-cp /usr/local/nginx/html/selfdev_can_sale/app/Http/Controllers/TraitBackendOperation.php /home/www/selfpath//sale/app/Http/Controllers/TraitBackendOperation.php
-cp /usr/local/nginx/html/selfdev_can_sale/app/Http/Resources/LptApp/CouponActivityResource.php /home/www/selfpath//sale/app/Http/Resources/LptApp/CouponActivityResource.php
-cp /usr/local/nginx/html/selfdev_can_sale/app/Http/Resources/LptApp/CouponActivityUserResource.php /home/www/selfpath//sale/app/Http/Resources/LptApp/CouponActivityUserResource.php
 cp /usr/local/nginx/html/selfdev_can_sale/app/Models/LptApp/CouponActivity.php /home/www/selfpath//sale/app/Models/LptApp/CouponActivity.php
 cp /usr/local/nginx/html/selfdev_can_sale/app/Models/LptApp/CouponActivityBatch.php /home/www/selfpath//sale/app/Models/LptApp/CouponActivityBatch.php
 cp /usr/local/nginx/html/selfdev_can_sale/app/Models/LptApp/CouponActivityUser.php /home/www/selfpath//sale/app/Models/LptApp/CouponActivityUser.php
-cp /usr/local/nginx/html/selfdev_can_sale/app/Models/Traits/CommonOperationTrait.php /home/www/selfpath//sale/app/Models/Traits/CommonOperationTrait.php
 cp /usr/local/nginx/html/selfdev_can_sale/app/Services/CouponActivityService.php /home/www/selfpath//sale/app/Services/CouponActivityService.php
 cp /usr/local/nginx/html/selfdev_can_sale/config/apidoc.php /home/www/selfpath//sale/config/apidoc.php
 cp /usr/local/nginx/html/selfdev_can_sale/config/app.php /home/www/selfpath//sale/config/app.php
