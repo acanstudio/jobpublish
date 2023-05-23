@@ -1,13 +1,9 @@
 app/Exceptions/BusinessException.php
 app/Http/Controllers/Lptapp/CouponActivityController.php
 app/Http/Controllers/Lptapp/CouponActivityUserController.php
-app/Http/Controllers/TraitBackendOperation.php
-app/Http/Resources/LptApp/CouponActivityResource.php
-app/Http/Resources/LptApp/CouponActivityUserResource.php
 app/Models/LptApp/CouponActivity.php
 app/Models/LptApp/CouponActivityBatch.php
 app/Models/LptApp/CouponActivityUser.php
-app/Models/Traits/CommonOperationTrait.php
 app/Services/CouponActivityService.php
 config/apidoc.php
 config/app.php
