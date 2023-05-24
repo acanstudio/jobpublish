@@ -9,7 +9,7 @@ use App\dakaprogram\Lib\Model\CouponActivityModel;
  *
  * @version 3.0.2
  */
-class CouponActivityAction extends ApiTokenAction
+class CouponActivityAction
 {
     /**
      * 我的优惠码数量
@@ -17,14 +17,13 @@ class CouponActivityAction extends ApiTokenAction
      */
     public function myCouponNum()
     {
+        $model = $this->getCouponModel();
+        $user = $this->getUserInfo();
+        $couponData = $model->getMyValidCoupons($user['uid']);
         $result = [
             'status' => 1,
             'info' => 'success',
-            'data' => [
-                'myCouponNum' => rand(0, 10),
-                'couponType' => ['new', 'back', 'event'][rand(0, 2)],
-                'couponTitle' => '优惠券文案',
-            ],
+            'data' => $couponData,
         ];
         echo json_encode($result);exit;
     }
@@ -37,7 +36,7 @@ class CouponActivityAction extends ApiTokenAction
     {
         $uid = intval($_REQUEST['mid']);
         //$result['data']['myCouponNum'] = rand(1, 10);
-        $model = new CouponActivityModel();
+        $model = $this->getCouponModel();
 
         $result['status'] = 1;
         $result['info'] = 'success';
@@ -67,14 +66,13 @@ class CouponActivityAction extends ApiTokenAction
      */
     public function myCouponList()
     {
-        $result['myCouponNum'] = rand(1, 10);
+        $model = $this->getCouponModel();
+        $user = $this->getUserInfo();
 
-        $model = new CouponActivityModel();
-        $uid = intval($_REQUEST['mid']);
-        $myCoupons = $model->getMyCoupons($uid);
-
+        $myCoupons = $model->getMyCoupons($user['uid']);
         $result['info'] = 'success';
         $result['status'] = 1;
+        $result['data']['couponNum'] = $model->getCourseNum();
         $result['data']['myCoupons'] = $myCoupons;
         echo json_encode($result);exit;
     }
@@ -102,5 +100,29 @@ class CouponActivityAction extends ApiTokenAction
         $result['data']['type'] = $userType;
         $result['info'] = 'success';
         echo json_encode($result);exit;
+    }
+
+    protected function getUserInfo($auth = true)
+    {
+        if ($auth) {
+    	    $token = $_REQUEST['token'];
+    	    $validToken = md5(date('Y-n-j').'liupinsy');
+    	    if (false) {//$token != $validToken) {
+                $result = [
+                    'info' => '有新内容,请重新进入',
+                    'status' => 0,
+                    'data' => null,
+                ];
+    	        echo json_encode($result);exit;
+    	    }
+        }
+        $uid = intval($_REQUEST['mid']);
+        $user = M('user')->where(['uid' => $uid])->find();
+        return $user;
+    }
+
+    protected function getCouponModel()
+    {
+        return new CouponActivityModel();
     }
 }

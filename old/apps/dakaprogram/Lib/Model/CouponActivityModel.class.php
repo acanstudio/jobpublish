@@ -18,12 +18,6 @@ class CouponActivityModel extends Model
         return $info;
     }
 
-    public function getPointCoupons($uid)
-    {
-        $infos = M('coupon_activity_user')->where(['uid' => $uid])->select();
-        return $infos;
-    }
-
     public function getIosbutton()
     {
         $action = new MinicourseAction();
@@ -31,25 +25,61 @@ class CouponActivityModel extends Model
         return $iosbutton;
     }
 
-    public function getMyCoupons($mid)
+    public function getMyValidCoupons($uid)
     {
-        $infos = M('coupon_activity_user')->limit(4)->select();
+        $cDate = date('Y-m-d H:i:s');
+        $sql = "SELECT * FROM `el_coupon_activity_user` WHERE `uid` = '{$uid}' AND `used_at` IS NULL AND (`end_at` IS NULL OR `end_at` > '{$cDate}') ORDER BY `created_at` DESC";
+        $r = M()->query($sql);
+        $lastCoupon = $r[0];
+        $activity = false;
+        if (!empty($lastCoupon)) {
+            $activity = M('coupon_activity')->where(['id' => $lastCoupon['activity_id']])->find();
+        }
+        return [
+            'myCouponNum' => count($r),
+            'couponTitle' => $activity ? $activity['name'] : '',
+            'tagDoc' => $activity ? $activity['tag_doc'] : '',
+            'bannerDoc' => $activity ? $activity['banner_doc'] : '',
+        ];
+    }
+
+    public function getMyCoupons($uid)
+    {
+        $cDate = date('Y-m-d H:i:s');
+        $sql = "SELECT * FROM `el_coupon_activity_user` WHERE `uid` = '{$uid}'";
+        $infos = M()->query($sql);
+
         $results = [];
-        $action = new MinicourseAction();
         foreach ($infos as $info) {
             $activity = M('coupon_activity')->where(['id' => $info['activity_id']])->find();
-            $batch = M('coupon_activity_batch')->where(['id' => $info['batch_id']])->select();
+            $batch = M('coupon_activity_batch')->where(['id' => $info['batch_id']])->find();
+            $sort = 'available';
+            $statusValue = '去使用';
+            if (!empty($info['used_at'])) {
+                $statusValue = '已使用';
+                $sort = 'used';
+            }
+            if (empty($info['used_at']) && (!empty($info['end_at']) && strtotime($info['end_at']) < time())) {
+                $statusValue = '已过期';
+                $sort = 'used';
+            }
             $data = [
                 'name' => $info['name'],
                 'brief' => $batch ? $batch['brief'] : '',
                 'money' => $info['money'],
-                'expireAt' => '2天后',
+                'expireAt' => $this->formatExpire($info['end_at']),
+                'endAt' => $info['end_at'] ? date('Y.m.d H:i', strtotime($info['end_at'])) : '',
                 'isNotice' => rand(0, 1),
+                'statusValue' => $statusValue,
             ];
-            $sort = ['used', 'available'][rand(0, 1)];
             $results[$sort][] = $data;
         }
         return $results;
+    }
+
+    public function getCourseNum()
+    {
+        return M('mini_course')->where(['is_publish' => 1])->count();
     }
 
     public function getCourseDatas($mid)
@@ -265,5 +295,10 @@ class CouponActivityModel extends Model
             return $money;
         }
         return $infos;
+    }
+
+    protected function formatExpire($endAt)
+    {
+        return '2天后过期';
     }
 }
