@@ -12,11 +12,42 @@ use App\dakaprogram\Lib\Model\CouponActivityModel;
 class CouponActivityAction
 {
     /**
+     * 当前可用优惠券
+     *
+     */
+    public function myValidCoupon()
+    {
+        $auth = $this->checkAuth();
+        $model = $this->getCouponModel();
+        $user = $this->getUserInfo();
+        $price = $_REQUEST['price'];
+        $couponData = $model->getMyValidCoupons($user['uid'], 'full');
+        $coupons = $couponData['coupons'];
+        foreach ($coupons as & $coupon) {
+
+            $coupon['disable'] = 0;
+            $coupon['disable_reason'] = '';
+            if ($coupon['type'] == 1 && $price < $info['full_num']) {
+                $coupon['disable'] = 1;
+                $coupon['disable_reason'] = '金额没达到满减额度';
+            }
+        }
+        $couponData['coupons'] = $coupons;
+        $result = [
+            'status' => 1,
+            'info' => 'success',
+            'data' => $couponData,
+        ];
+        echo json_encode($result);exit;
+    }
+
+    /**
      * 我的优惠码数量
      *
      */
     public function myCouponNum()
     {
+        $auth = $this->checkAuth();
         $model = $this->getCouponModel();
         $user = $this->getUserInfo();
         $couponData = $model->getMyValidCoupons($user['uid']);
@@ -34,13 +65,13 @@ class CouponActivityAction
      */
     public function applyCoupon()
     {
-        $uid = intval($_REQUEST['mid']);
-        //$result['data']['myCouponNum'] = rand(1, 10);
+        $auth = $this->checkAuth();
         $model = $this->getCouponModel();
+        $user = $this->getUserInfo();
 
         $result['status'] = 1;
         $result['info'] = 'success';
-        $result['data'] = $model->applyCoupon($uid);
+        $result['data'] = $model->applyCoupon($user);
         echo json_encode($result);exit;
     }
 
@@ -66,13 +97,17 @@ class CouponActivityAction
      */
     public function myCouponList()
     {
+        $auth = $this->checkAuth();
         $model = $this->getCouponModel();
         $user = $this->getUserInfo();
 
         $myCoupons = $model->getMyCoupons($user['uid']);
+        $defaultCourse = M('mini_course')->find(1);
         $result['info'] = 'success';
         $result['status'] = 1;
-        $result['data']['couponNum'] = $model->getCourseNum();
+        $result['data']['courseNum'] = $model->getCourseNum();
+        $result['data']['courseId'] = 1;
+        $result['data']['kfPic'] = $defaultCourse['kf_pic'];
         $result['data']['myCoupons'] = $myCoupons;
         echo json_encode($result);exit;
     }
@@ -83,11 +118,7 @@ class CouponActivityAction
      */
     public function currentCoupon()
     {
-        $uid = intval($_REQUEST['mid']);
-        $user = M('user')->where(['uid'=>$uid])->find();
-        $model = new CouponActivityModel();
-        $userType = 'new';//$model->getUserType($user);
-
+        $model = $this->getCouponModel();
         $iosbutton = $model->getIosbutton();
         $result['status'] = 1;
         $result['data']['iosbutton'] = $iosbutton;
@@ -95,27 +126,44 @@ class CouponActivityAction
             echo json_encode($result);exit;
         }
 
-        $activity = $model->getPointTypeInfo($userType);
-        $result['data']['activity'] = $activity;
-        $result['data']['type'] = $userType;
-        $result['info'] = 'success';
+        $auth = false;//$this->checkAuth(false);
+        if (empty($auth)) {
+            $userType = 'new';
+            $uid = 0;
+        } else {
+            $user = $this->getUserInfo();
+            $uid = $user['uid'];
+            $userType = $model->getUserType($user['uid']);
+        }
+
+        $activity = $model->getPointTypeInfo($userType, $uid);
+        $result = [
+            'info' => 'success',
+            'data' => ['type' => $userType, 'iosbutton' => $iosbutton, 'activity' => $activity],
+        ];
         echo json_encode($result);exit;
     }
 
-    protected function getUserInfo($auth = true)
+    protected function checkAuth($throw = true)
     {
-        if ($auth) {
-    	    $token = $_REQUEST['token'];
-    	    $validToken = md5(date('Y-n-j').'liupinsy');
-    	    if (false) {//$token != $validToken) {
-                $result = [
-                    'info' => '有新内容,请重新进入',
-                    'status' => 0,
-                    'data' => null,
-                ];
-    	        echo json_encode($result);exit;
-    	    }
-        }
+    	$token = $_REQUEST['token'];
+    	$validToken = md5(date('Y-n-j').'liupinsy');
+    	if (false) {//$token != $validToken) {
+            if (!$throw) {
+                return false;
+            }
+            $result = [
+                'info' => '有新内容,请重新进入',
+                'status' => 0,
+                'data' => null,
+            ];
+    	    echo json_encode($result);exit;
+    	}
+        return true;
+    }
+
+    protected function getUserInfo()
+    {
         $uid = intval($_REQUEST['mid']);
         $user = M('user')->where(['uid' => $uid])->find();
         return $user;
