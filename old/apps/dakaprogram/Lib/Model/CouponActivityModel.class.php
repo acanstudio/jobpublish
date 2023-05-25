@@ -371,6 +371,7 @@ class CouponActivityModel extends Model
         }
         $money = $info['cut_num'] == intval($info['cut_num']) ? intval($info['cut_num']) : $info['cut_num'];
         $data = [
+            'id' => $info['id'],
             'name' => $info['name'],
             'brief' => $batch ? $batch['brief'] : '',
             'money' => $money,
