@@ -27,6 +27,14 @@ class MiniorderAction extends ApiTokenAction
         $ajaxreturn['receive_name']         = $this->defaltAddress($mid, 'receive_name');
         $ajaxreturn['sku_data_common']      = $this->skufixlist($id, $mid, 0);
         $ajaxreturn['sku_data_specialsell'] = $this->skufixlist($id, $mid, 1);
+
+        // coupon-info v3.0.2
+        $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
+        $couponInfo = $model->courseCouponInfo($mid);
+        $ajaxreturn['coupon_info'] = $couponInfo;
+        $ajaxreturn['sku_data_common'] = $model->formatSkuPrice($couponInfo, $ajaxreturn['sku_data_common']);
+        // end coupon-info v3.0.2
+
         $this->ajaxreturn($ajaxreturn, "查询成功", 1);
     }
     public function paycourseinfo_test()
@@ -194,11 +202,11 @@ class MiniorderAction extends ApiTokenAction
             if (is_string($couponInfo)) {
                 $this->ajaxReturn('', $couponInfo, 0);
             }
+            $price = $pay_price;
         }
         // end coupon-info v3.0.2
 
-        if ($price != $pay_price && empty($coupon_id)) { // coupon-info v3.0.2
-        //if ($price != $pay_price) {
+        if ($price != $pay_price) {
             $this->ajaxReturn('', '支付值错误', 0);
         }
         if ($paytype == 'wxpay') {
@@ -237,7 +245,7 @@ class MiniorderAction extends ApiTokenAction
                     //'used_at' => date('Y-m-d H:i:s'),
                     'order_num' => $couponInfo['order_num'] + 1,
                     'order_data' => $couponInfo['order_data'] . ';' . $rechargeid,
-                    'order_id' => $rechargeid,
+                    'orderid' => $rechargeid,
                 ];
                 M('coupon_activity_user')->save($couponUpdate);
             }

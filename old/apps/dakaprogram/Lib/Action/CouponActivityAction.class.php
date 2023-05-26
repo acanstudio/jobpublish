@@ -22,17 +22,25 @@ class CouponActivityAction
         $user = $this->getUserInfo();
         $price = $_REQUEST['price'];
         $couponData = $model->getMyValidCoupons($user['uid'], 'full');
+        $maxDiscount = 0;
         $coupons = $couponData['coupons'];
-        foreach ($coupons as & $coupon) {
+        $newCoupons = $disableCoupons = [];
+        foreach ($coupons as $coupon) {
 
             $coupon['disable'] = 0;
             $coupon['disable_reason'] = '';
-            if ($coupon['type'] == 1 && $price < $info['full_num']) {
+
+            if ($coupon['type'] == 1 && $price < $coupon['fullNum']) {
                 $coupon['disable'] = 1;
                 $coupon['disable_reason'] = '金额没达到满减额度';
+                $disableCoupons[] = $coupon;
+            } else {
+                $maxDiscount = max($maxDiscount, $coupon['money']);
+                $newCoupons[] = $coupon;
             }
         }
-        $couponData['coupons'] = $coupons;
+        $couponData['coupons'] = array_merge($newCoupons, $disableCoupons);
+        $couponData['maxDiscount'] = $maxDiscount;
         $result = [
             'status' => 1,
             'info' => 'success',
@@ -148,12 +156,12 @@ class CouponActivityAction
     {
     	$token = $_REQUEST['token'];
     	$validToken = md5(date('Y-n-j').'liupinsy');
-    	if (false) {//$token != $validToken) {
+    	if ($token != $validToken) {
             if (!$throw) {
                 return false;
             }
             $result = [
-                'info' => '有新内容,请重新进入',
+                'info' => '有新内容,请重新进入1' . '-' . $validToken,
                 'status' => 0,
                 'data' => null,
             ];
