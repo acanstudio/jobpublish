@@ -185,7 +185,9 @@ class MiniorderAction extends ApiTokenAction
         $order                  = M('mini_course_order')->where($where)->find();
         $sku                    = M('mini_course_sku')->where(['id' => $course_sku_id])->find();
         // $price                  = $sku['price'];
-        $price = $sku['limit_price'] > 0 ? $sku['limit_price'] : $sku['price'];
+        //$price = $sku['limit_price'] > 0 ? $sku['limit_price'] : $sku['price'];
+        $coupon_id = intval($_REQUEST['coupon_id']); // coupon-info v3.0.2
+        $price = $sku['limit_price'] > 0 && empty($coupon_id) ? $sku['limit_price'] : $sku['price']; // coupon-info v3.0.2
         if (!empty($order)) {
             $this->ajaxReturn('', '订单支付重复', 0);
         }
@@ -194,7 +196,6 @@ class MiniorderAction extends ApiTokenAction
         }
 
         // coupon-info v3.0.2
-        $coupon_id = intval($_REQUEST['coupon_id']);
         $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
         $couponInfo = false;
         if (!empty($coupon_id)) {

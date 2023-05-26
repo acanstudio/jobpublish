@@ -141,7 +141,7 @@ class CouponActivityModel extends Model
     {
         $couponData = $this->getMyValidCoupons($user['uid']);
         if ($couponData['myCouponNum'] >= 1) {
-            //return false;
+            return false;
         }
         $uType = $this->getUserType($user['uid']);
         $fetch = $this->dispatchCoupon($user, $uType);
@@ -426,7 +426,7 @@ class CouponActivityModel extends Model
         $realPrice = $realPrice <= 0 ? 0.01 : $pay_price;
         //if ($realPrice != 0.01 && $realPrice != $pay_price) {
         if ($realPrice != $pay_price) {
-            return '优惠额度有误：' . $pay_price . '-' . $info['cut_num'];
+            return '优惠额度有误：' . $realPrice . '=' . $pay_price . '-' . $info['cut_num'];
         }
         return $info;
     }
@@ -434,21 +434,39 @@ class CouponActivityModel extends Model
     public function formatSkuPrice($couponData, $skuDatas)
     {
         foreach ($skuDatas as & $skuData) {
-            $skuCoupon = $this->getSkuCoupon($skuData, $couponData);
+            $skuCoupon = $this->getSkuCoupon($skuData['price'], $couponData['coupon_num'], $couponData['coupon_list']);
             $skuData['coupon_valid'] = $skuCoupon['coupon_valid'];
             $skuData['coupon_price'] = $skuCoupon['coupon_price'];
+            $skuData['coupon_money'] = $skuCoupon['coupon_money'];
         }
         return $skuDatas;
     }
 
-    protected function getSkuCoupon($skuData, $couponData)
+    public function getSkuCoupon($skuPrice, $couponNum, $coupons)
     {
-        $valid = rand(0, 1);
-        $price = $valid ? $skuData['price'] - rand(1, $skuData['price'] - 1) : 0;
-        $default = ['coupon_valid' => $valid, 'coupon_price' => $price];
-        return $default;
-        if (empty($couponData)) {
-            return $skuDatas;
+        $valid = 0;
+        $price = 0;
+        $default = ['coupon_valid' => $valid, 'coupon_price' => $price, 'coupon_money' => 0];
+        if ($couponNum < 1) {
+            return $default;
         }
+        
+        $cPrices = [];
+        foreach ($coupons as $coupon) {
+            if ($coupon['type'] == 1 && $coupon['fullNum'] > $skuPrice) {
+                continue;
+            }
+            $diff = $skuPrice - $coupon['money'];
+            $dKey = abs($diff);
+            $cPrices[$dKey] = isset($cPrices[$dKey]) ? max($diff, $cPrices[$dKey]) : $diff;
+        }
+        if (empty($cPrices)) {
+            return $default;
+        }
+        ksort($cPrices);
+        $price = array_values($cPrices)[0];
+        $cPrice = $skuPrice - $diff;
+        $price = $price <= 0 ? '0.01' : $price;
+        return ['coupon_valid' => 1, 'coupon_price' => $price, 'coupon_money' => $cPrice];
     }
 }

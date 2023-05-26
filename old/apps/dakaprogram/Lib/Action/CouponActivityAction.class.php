@@ -25,6 +25,9 @@ class CouponActivityAction
         $maxDiscount = 0;
         $coupons = $couponData['coupons'];
         $newCoupons = $disableCoupons = [];
+
+        $bestId = 0;
+        $bestInfo = $model->getSkuCoupon($price, $couponData['myCouponNum'], $couponData['coupons']);
         foreach ($coupons as $coupon) {
 
             $coupon['disable'] = 0;
@@ -36,10 +39,20 @@ class CouponActivityAction
                 $disableCoupons[] = $coupon;
             } else {
                 $maxDiscount = max($maxDiscount, $coupon['money']);
-                $newCoupons[] = $coupon;
+                $newCoupons[$coupon['id']] = $coupon;
+
+                if ($bestInfo && strval($bestInfo['coupon_money']) == strval($coupon['money'])) {
+                    $bestId = $coupon['id'];
+                }
             }
         }
-        $couponData['coupons'] = array_merge($newCoupons, $disableCoupons);
+        $bestCoupon = [];
+        if (!empty($bestId)) {
+            $bestCoupon = $newCoupons[$bestId];
+            unset($newCoupons[$bestId]);
+            array_unshift($newCoupons, $bestCoupon);
+        }
+        $couponData['coupons'] = array_merge(array_values($newCoupons), $disableCoupons);
         $couponData['maxDiscount'] = $maxDiscount;
         $result = [
             'status' => 1,
