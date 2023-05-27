@@ -49,6 +49,8 @@ class CouponActivityAction
         }
         if (empty($availableNum)) {
             $couponData['couponTitle'] = '';
+            $couponData['tagDoc'] = '';
+            $couponData['bannerDoc'] = '';
         }
         $bestCoupon = [];
         if (!empty($bestInfo) && !empty($bestInfo['coupon_id'])) {

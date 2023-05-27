@@ -191,6 +191,10 @@ class CouponActivityModel extends Model
         $infos = $this->getValidActivities($type);
         $couponNum = 0;
         foreach ($infos as $key => $info) {
+            $coupons = M('coupon_activity_user')->where(['uid' => $user['uid'], 'activity_type' => $ifno['activity_type']])->count();
+            if ($coupons) {
+                break;
+            }
             if ($key > 0) {
                 if ($infos[$key]['coupon_activity_id'] != $infos[$key - 1]['coupon_activity_id'] && !empty($couponNum)) {
                     break;
@@ -365,24 +369,24 @@ class CouponActivityModel extends Model
         return $infos;
     }
 
-    protected function formatExpire($endAt)
+    protected function formatExpire($endAt, $used)
     {
         $endTime = strtotime($endAt);
         $now = time();
-        if ($endTime < $now) {
-            return $endAt;
+        if ($endTime < $now || $used) {
+            return date('Y-m-d H:i', $endTime) . '到期';
         }
         $diff = $endTime - $now;
         if ($diff > 86400 * 10) {
-            return date('m-d', $endTime);
+            return date('m-d', $endTime) . '到期';
         }
         if ($diff > 86400) {
             $days = ceil($diff / 86400);
-            return "{$days}天后";
+            return "{$days}天后到期";
         }
         $str = date('d', $endTime) != date('d', $now) ? '明日' : '今日';
         ////var_dump($endAt);var_dump(date('d', $endAt));var_dump(date('d', $now));
-        return $str . date('H:i', $endTime);
+        return $str . date('H:i', $endTime) . '到期';
     }
 
     public function getCourseTag($id)
@@ -410,7 +414,7 @@ class CouponActivityModel extends Model
             $subSort = 'expired';
         }
         $money = $info['cut_num'] == intval($info['cut_num']) ? intval($info['cut_num']) : $info['cut_num'];
-        $expireAt = $this->formatExpire($info['end_at']);
+        $expireAt = $this->formatExpire($info['end_at'], $info['used_at']);
         $data = [
             'id' => $info['id'],
             'name' => $info['name'],
@@ -494,11 +498,12 @@ class CouponActivityModel extends Model
         if (!empty($negative)) {
             krsort($negative);
             $info = array_pop($negative);
-            return ['coupon_valid' => 1, 'coupon_price' => 0.01, 'coupon_money' => $info['money'], 'coupon_id' => $info['coupon_id']];
+            return ['coupon_valid' => 1, 'coupon_price' => '0.01', 'coupon_money' => $info['money'], 'coupon_id' => $info['coupon_id']];
         }
 
         krsort($cPrices);
         $info = array_pop($cPrices);
-        return ['coupon_valid' => 1, 'coupon_price' => $skuPrice - $info['money'], 'coupon_money' => $info['money'], 'coupon_id' => $info['coupon_id']];
+        $couponPrice = strval(number_format($skuPrice - $info['money'], 2));
+        return ['coupon_valid' => 1, 'coupon_price' => $couponPrice, 'coupon_money' => $info['money'], 'coupon_id' => $info['coupon_id']];
     }
 }
