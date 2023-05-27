@@ -96,23 +96,32 @@ class CouponActivityController extends Controller
                 $query = $query->where(['status' => 0]);
                 break;
             case 'nostart':
-                $query = $query->where('start_at', '>', $cDate);
+                $query = $query->where(['status' => 1])->where('start_at', '>', $cDate);
                 break;
             case 'running':
-                $query = $query->where(function ($query) use ($cDate) {
-                    $query->whereNull('end_at')->whereOr('end_at', '>', $cDate);
+                $query = $query->where(['status' => 1])->where(function ($query) use ($cDate) {
+                    $query->whereNull('end_at')->orWhere('end_at', '>', $cDate);
                 })->where(function($query) {
                     $query->whereHasIn('batchDatas', function ($query) {
-                        return $query->whereColumn('total_num', '>', 'send_num')->where('status', 2);
+                        return $query->whereColumn('total_num', '>', 'send_num')->where('status', 2)->where(function ($query) {
+                            $nowDate = date('Y-m-d H:i:s');
+                            $query->whereNull('end_at')->orWhere('end_at', '>', $nowDate);
+                        });
                     });
                 });
                 break;
             case 'finish':
-                $query = $query->whereNotNull('end_at')->where('end_at', '<', $cDate)->where(function($query) {
-                    $query->whereHasIn('batchDatas', function ($query) {
-                        return $query->whereColumn('total_num', '<=', 'send_num')->orWhere('status', '<>', 2);
+                $query = $query->where(function ($query) use ($cDate) {
+                    $query->whereNotNull('end_at')->where('end_at', '<', $cDate);
+                })->orWhere(function($query) use ($cDate) {
+                    $query->whereHasIn('batchDatas', function ($query) use ($cDate) {
+                        return $query->whereIn('status', [0, 3, 4])->orWhere(function ($query) use ($cDate) {
+                            $query->whereColumn('total_num', '<', 'send_num')->orWhere(function ($query) use ($cDate) {
+                                $query->whereNotNull('end_at')->where('end_at', '<', $cDate);
+                            });
+                        });
                     });
-                });
+                })->where(['status' => 1]);
                 break;
             }
         }
@@ -120,9 +129,12 @@ class CouponActivityController extends Controller
         $data = $query->orderByDesc('id')->paginate($request->input('per_page',10));
 
 		$data->map(function ($item){
+            $publishInfo = $item->publishInfo();
             $item->activity_type_value = $item->getActivityTypeDatas($item->activity_type);
             $item->status_value = $item->formatStatus();
             $item->created_at = $item->created_at->toDateTimeString();
+            $item->publish_status = $publishInfo['publish_status'];
+            $item->publish_text = $publishInfo['publish_text'];
             $item->expiration_date = $item->formatExpiration();
 
             $item->batch_infos = $item->getBatchDatas();
@@ -222,6 +234,7 @@ class CouponActivityController extends Controller
      *
      * @bodyParam id required string 信息ID
      * @bodyParam cancel required int 1: 取消发布; 0 ：或其他值为发布当前活动
+     * @bodyParam force int 1: 强制发布; 0 ：返回是否允许发布
      *
      * @response 400 {
      * "code": 200,
@@ -244,7 +257,14 @@ class CouponActivityController extends Controller
             return responseJsonHttp(1, $validatorInfo->errors()->first());
         }
         $info = $this->getModel()->find($params['id']);
-        $info->status = isset($params['cancel']) && $params['cancel'] == 1 ? 0 : 1;
+        $status = isset($params['cancel']) && $params['cancel'] == 1 ? 0 : 1;
+        $force = request()->input('force');
+        $info->status = $status;
+        $infoType = $info['activity_type'];
+        if ($status == 1 && in_array($infoType, ['new', 'back'])) {
+            $this->getModel()->where(['status' => 1, 'activity_type' => $infoType])->update(['status' =>0]);
+        }
+
         $info->save();
 		return response()->json(['status' => 0, 'msg' => '保存成功', 'data' => (object)[]]);
     }
