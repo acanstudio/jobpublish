@@ -99,14 +99,14 @@ class MinicourseAction extends ApiTokenAction
     {
         $data['course_id']  = $id;
         $data['is_publish'] = 1;
-        $RS                 = M('mini_course_sku')->where($data)->order('price asc')->getField('price');
+        $RS                 = M('mini_course_sku')->where($data)->order('limit_price asc')->getField('limit_price');
         return $RS;
     }
     public function highPrice($id = 0)
     {
         $data['course_id']  = $id;
         $data['is_publish'] = 1;
-        $RS                 = M('mini_course_sku')->where($data)->order('price desc')->getField('price');
+        $RS                 = M('mini_course_sku')->where($data)->order('limit_price desc')->getField('limit_price');
         return $RS;
     }
 

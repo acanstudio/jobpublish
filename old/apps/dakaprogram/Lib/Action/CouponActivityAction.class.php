@@ -26,8 +26,8 @@ class CouponActivityAction
         $coupons = $couponData['coupons'];
         $newCoupons = $disableCoupons = [];
 
-        $bestId = 0;
         $bestInfo = $model->getSkuCoupon($price, $couponData['myCouponNum'], $couponData['coupons']);
+        $availableNum = 0;
         foreach ($coupons as $coupon) {
 
             $coupon['disable'] = 0;
@@ -38,6 +38,7 @@ class CouponActivityAction
                 $coupon['disable_reason'] = '金额没达到满减额度';
                 $disableCoupons[] = $coupon;
             } else {
+                $availableNum++;
                 $maxDiscount = max($maxDiscount, $coupon['money']);
                 $newCoupons[$coupon['id']] = $coupon;
 
@@ -46,10 +47,13 @@ class CouponActivityAction
                 }
             }
         }
+        if (empty($availableNum)) {
+            $couponData['couponTitle'] = '';
+        }
         $bestCoupon = [];
-        if (!empty($bestId)) {
-            $bestCoupon = $newCoupons[$bestId];
-            unset($newCoupons[$bestId]);
+        if (!empty($bestInfo) && !empty($bestInfo['coupon_id'])) {
+            $bestCoupon = $newCoupons[$bestInfo['coupon_id']];
+            unset($newCoupons[$bestInfo['coupon_id']]);
             array_unshift($newCoupons, $bestCoupon);
         }
         $couponData['coupons'] = array_merge(array_values($newCoupons), $disableCoupons);
@@ -124,10 +128,15 @@ class CouponActivityAction
 
         $myCoupons = $model->getMyCoupons($user['uid']);
         $defaultCourse = M('mini_course')->find(1);
+        $courseNum = $model->getCourseNum();
         $result['info'] = 'success';
         $result['status'] = 1;
-        $result['data']['courseNum'] = $model->getCourseNum();
+        $result['data']['courseNum'] = $courseNum;
         $result['data']['courseId'] = 1;
+        if ($courseNum == 1) {
+            $validCourse = M('mini_course')->where(['is_publish' => 1])->find();
+            $result['data']['courseId'] = $validCourse['id'];
+        }
         $result['data']['kfPic'] = $defaultCourse['kf_pic'];
         $result['data']['myCoupons'] = $myCoupons;
         echo json_encode($result);exit;
