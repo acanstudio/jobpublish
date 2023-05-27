@@ -20,7 +20,7 @@ class CouponActivityUser extends Model
 
     public function couponActivityBatch()
     {
-        return $this->belongsTo(CouponActivityBatch::class, 'batch_id', 'id');
+        return $this->belongsTo(CouponActivityBatch::class, 'batch_id', 'batch_id');
     }
 
     public function couponActivity()

@@ -25,22 +25,31 @@ class CouponActivityService
         return $info;
     }
 
-    public function getBatchList($where)
+    public function getBatchList($where, $activityType = '')
     {
         //$url = '/api/couponBatch/page';
         $url = '/api/couponBatch/pageForPlat';
+        $where['useTypes'] = [-1,1];
+        if (in_array($activityType, ['new', 'back']) && !isset($where['timeType'])) {
+            $where['timeType'] = 1;
+            $where['status'] = 2;
+        } else if ($activityType == 'event' && !isset($where['specialStatus'])) {
+            $where['specialStatus'] = 1;
+        }
+
         $resultSource = $this->fetchRemoteData($url, $where);
         $result = $rData = [];
         $statusValues = [1 => '未开始', 2 => '进行中', 3 => '已结束', 4 => '已失效'];
         $batchModel = new CouponActivityBatch();
         foreach ($resultSource['data'] as $data) {
-            $brief = $data['type'] == 1 ? '满减' : '立减';
-            $brief .= $data['type'] == 1 ? ' ' . $data['cutNum'] : " {$data['fullNum']} - {$data['cutNum']}";
+            $brief = $data['type'] == 1 ? '满' . $data['fullNum'] . '减' : '立减';
+            $brief .= $data['type'] == 1 ? ' ' . $data['cutNum'] : " {$data['cutNum']}";
             $data['brief'] = $brief;
             $data['statusValue'] = $statusValues[$data['status']] ?? $data['status'];
             $data['timeDesc'] = $data['timeType'] == 1 ? "{$data['timeDesc']} 天内有效" : $data['timeDesc'];
             $exist = $batchModel->where(['batch_id' => $data['couponBatchId']])->first();
             $data['isUse'] = $exist ? 1 : 0;
+            $data['canSelect'] = $exist ? 0 : 1;
             $rData[] = $data;
         }
         $result = [

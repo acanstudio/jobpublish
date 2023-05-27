@@ -38,6 +38,7 @@ class CouponActivity extends Model
             return false;
         }
         $newModel = new CouponActivityBatch();
+        $newModel->where(['coupon_activity_id' => $info['id']])->whereNotIn('batch_id', $batchIds)->where('send_num', 0)->delete();
         foreach ($batchIds as $batchId) {
             $exist = $newModel->where(['batch_id' => $batchId])->first();
             if ($exist) {
@@ -59,6 +60,9 @@ class CouponActivity extends Model
         $fields = ['name', 'banner_doc', 'tag_doc', 'status', 'picture_url'];
         $data = [];
         foreach ($fields as $field) {
+            if (!isset($params[$field])) {
+                continue;
+            }
             $value = $params[$field] ?? '';
             $this->$field = $value;
         }
@@ -97,12 +101,18 @@ class CouponActivity extends Model
             return '未发布';
         }
         $now = Carbon::now();
-        if ($this->start_at && $now < Carbon::parse($this->start)) {
+        if ($this->start_at && $now < Carbon::parse($this->start_at)) {
             return '未开始';
         }
         $batchModel = new CouponActivityBatch();
-        $validCount = $batchModel->where('coupon_activity_id', $this->id)->whereColumn('send_num', '<', 'total_num')->count();
-        if ($validCount) {
+        $nowDate = $now->format('Y-m-d H:i:s');
+        if (!empty($this->end_at) && $this->end_at < $nowDate) {
+            return '已结束';
+        }
+        $validCount = $batchModel->whereIn('status', [1, 2])->where('coupon_activity_id', $this->id)->whereColumn('send_num', '<', 'total_num')->where(function ($query) use ($nowDate) {
+            $query->whereNull('end_at')->orWhere('end_at', '>', $nowDate);
+        })->count();
+        if (!$validCount) {
             return '已结束';
         }
         return '进行中';
@@ -132,7 +142,9 @@ class CouponActivity extends Model
 
         foreach ($batchDatas as $batch) {
             $results[] = [
+                'batch_id' => $batch['batch_id'],
                 'name' => $batch['name'],
+                'send_num' => $batch['send_num'],
                 'brief' => $batch['brief'],
                 'status_value' => $statusValues[$batch['status']] ?? $batch['status'],
                 'total_num' => $batch['total_num'],
@@ -140,5 +152,34 @@ class CouponActivity extends Model
             ];
         }
         return $results;
+    }
+
+    public function publishInfo()
+    {
+        if ($this->status == 1) {
+            return ['publish_status' => 0, 'publish_text' => ''];
+        }
+
+        $type = $this->activity_type;
+        $id = $this->id;
+        $cDate = date('Y-m-d H:i:s');
+        $sql = "SELECT * FROM `el_coupon_activity` AS `ca`, `el_coupon_activity_batch` AS `b` WHERE `ca`.`status` = 1 AND `ca`.`id` != {$id} AND `ca`.`activity_type` = '{$type}' AND `ca`.`id` = `b`.`coupon_activity_id` AND `b`.`status` IN (1, 2) AND `b`.`total_num` > `b`.`send_num` AND (`b`.`end_at` IS NULL OR `b`.`end_at` > '{$cDate}') ;";
+        if ($type == 'evene') {
+            $sql .= " AND ((`ca`.`start_at` >= '{$this->start_at}' && `ca`.start_at` <= '{$this->end_at}') || (`ca`.`end_at` >= '{$this->start_at}' && `ca`.`end_at` <= '{$this->end_at}'))";
+        }
+        $r = \DB::select($sql);
+
+        $validCount = count($r);
+
+
+        $texts = [
+            'new' => '当前已有“进行中”的新人活动。如仍需发布，将对“进行中”的新人活动予以取消发布。 确定要继续发布吗？', 
+            'back' => '当前已有“进行中”的回归活动。如仍需发布，将对“进行中”的回归活动予以取消发布。确定要继续发布吗？', 
+            'event' => '该活动与其他事件活动周期重合，重合期内将按最新创建的活动向目标人群发券。确定要继续发布吗？'
+        ];
+        return [
+            'publish_status' => $validCount ? 1 : 0,
+            'publish_text' => $validCount ? $texts[$type] : '',
+        ];
     }
 }
