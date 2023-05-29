@@ -1,4 +1,6 @@
-mkdir /home/www/selfpath//old/apps/dakaprogram/Lib/Action -p;
 cp /usr/local/nginx/html/selfdev_liupin//apps/dakaprogram/Lib/Action/CouponActivityAction.class.php /home/www/selfpath//old/apps/dakaprogram/Lib/Action/CouponActivityAction.class.php
-mkdir /home/www/selfpath//old/apps/dakaprogram/Lib/Model -p;
+cp /usr/local/nginx/html/selfdev_liupin//apps/dakaprogram/Lib/Action/HuatiV283Action.class.php /home/www/selfpath//old/apps/dakaprogram/Lib/Action/HuatiV283Action.class.php
+cp /usr/local/nginx/html/selfdev_liupin//apps/dakaprogram/Lib/Action/MinicourseAction.class.php /home/www/selfpath//old/apps/dakaprogram/Lib/Action/MinicourseAction.class.php
+cp /usr/local/nginx/html/selfdev_liupin//apps/dakaprogram/Lib/Action/MininotifyAction.class.php /home/www/selfpath//old/apps/dakaprogram/Lib/Action/MininotifyAction.class.php
+cp /usr/local/nginx/html/selfdev_liupin//apps/dakaprogram/Lib/Action/MiniorderAction.class.php /home/www/selfpath//old/apps/dakaprogram/Lib/Action/MiniorderAction.class.php
 cp /usr/local/nginx/html/selfdev_liupin//apps/dakaprogram/Lib/Model/CouponActivityModel.class.php /home/www/selfpath//old/apps/dakaprogram/Lib/Model/CouponActivityModel.class.php

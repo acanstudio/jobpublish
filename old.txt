@@ -1,2 +1,6 @@
 apps/dakaprogram/Lib/Action/CouponActivityAction.class.php
+apps/dakaprogram/Lib/Action/HuatiV283Action.class.php
+apps/dakaprogram/Lib/Action/MinicourseAction.class.php
+apps/dakaprogram/Lib/Action/MininotifyAction.class.php
+apps/dakaprogram/Lib/Action/MiniorderAction.class.php
 apps/dakaprogram/Lib/Model/CouponActivityModel.class.php

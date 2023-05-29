@@ -141,6 +141,7 @@ class CouponActivity extends Model
         $statusValues = [1 => '未开始', 2 => '进行中', 3 => '已结束', 4 => '已失效'];
 
         foreach ($batchDatas as $batch) {
+            $batch['status'] = $batch['send_num'] >= $batch['total_num'] ? 4 : $batch['status'];
             $results[] = [
                 'batch_id' => $batch['batch_id'],
                 'name' => $batch['name'],
@@ -148,7 +149,7 @@ class CouponActivity extends Model
                 'brief' => $batch['brief'],
                 'status_value' => $statusValues[$batch['status']] ?? $batch['status'],
                 'total_num' => $batch['total_num'],
-                'time_desc' => $batch['time_type'] == 1 ? "{$batch['time_desc']} 天内有效" : $batch['time_desc'],
+                'time_desc' => $batch['time_type'] == 1 ? "{$batch['time_desc']}" : $batch['time_desc'],
             ];
         }
         return $results;
