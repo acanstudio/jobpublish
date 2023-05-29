@@ -9,22 +9,41 @@ use App\dakaprogram\Lib\Model\CouponActivityModel;
  *
  * @version 3.0.2
  */
-class CouponActivityAction extends ApiTokenAction
+class CouponActivityAction
 {
+    /**
+     * 当前可用优惠券
+     *
+     */
+    public function myValidCoupon()
+    {
+        $auth = $this->checkAuth();
+        $model = $this->getCouponModel();
+        $user = $this->getUserInfo();
+        $price = $_REQUEST['price'];
+        $couponData = $model->getCouponsWithPrice($user['uid'], $price);
+        $result = [
+            'status' => 1,
+            'info' => 'success',
+            'data' => $couponData,
+        ];
+        echo json_encode($result);exit;
+    }
+
     /**
      * 我的优惠码数量
      *
      */
     public function myCouponNum()
     {
+        $auth = $this->checkAuth();
+        $model = $this->getCouponModel();
+        $user = $this->getUserInfo();
+        $couponData = $model->getMyValidCoupons($user['uid']);
         $result = [
             'status' => 1,
             'info' => 'success',
-            'data' => [
-                'myCouponNum' => rand(0, 10),
-                'couponType' => ['new', 'back', 'event'][rand(0, 2)],
-                'couponTitle' => '优惠券文案',
-            ],
+            'data' => $couponData,
         ];
         echo json_encode($result);exit;
     }
@@ -35,13 +54,13 @@ class CouponActivityAction extends ApiTokenAction
      */
     public function applyCoupon()
     {
-        $uid = intval($_REQUEST['mid']);
-        //$result['data']['myCouponNum'] = rand(1, 10);
-        $model = new CouponActivityModel();
+        $auth = $this->checkAuth();
+        $model = $this->getCouponModel();
+        $user = $this->getUserInfo();
 
         $result['status'] = 1;
         $result['info'] = 'success';
-        $result['data'] = $model->applyCoupon($uid);
+        $result['data'] = $model->applyCoupon($user);
         echo json_encode($result);exit;
     }
 
@@ -67,14 +86,22 @@ class CouponActivityAction extends ApiTokenAction
      */
     public function myCouponList()
     {
-        $result['myCouponNum'] = rand(1, 10);
+        $auth = $this->checkAuth();
+        $model = $this->getCouponModel();
+        $user = $this->getUserInfo();
 
-        $model = new CouponActivityModel();
-        $uid = intval($_REQUEST['mid']);
-        $myCoupons = $model->getMyCoupons($uid);
-
+        $myCoupons = $model->getMyCoupons($user['uid']);
+        $defaultCourse = M('mini_course')->find(1);
+        $courseNum = $model->getCourseNum();
         $result['info'] = 'success';
         $result['status'] = 1;
+        $result['data']['courseNum'] = $courseNum;
+        $result['data']['courseId'] = 1;
+        if ($courseNum == 1) {
+            $validCourse = M('mini_course')->where(['is_publish' => 1])->find();
+            $result['data']['courseId'] = $validCourse['id'];
+        }
+        $result['data']['kfPic'] = $defaultCourse['kf_pic'];
         $result['data']['myCoupons'] = $myCoupons;
         echo json_encode($result);exit;
     }
@@ -85,11 +112,7 @@ class CouponActivityAction extends ApiTokenAction
      */
     public function currentCoupon()
     {
-        $uid = intval($_REQUEST['mid']);
-        $user = M('user')->where(['uid'=>$uid])->find();
-        $model = new CouponActivityModel();
-        $userType = 'new';//$model->getUserType($user);
-
+        $model = $this->getCouponModel();
         $iosbutton = $model->getIosbutton();
         $result['status'] = 1;
         $result['data']['iosbutton'] = $iosbutton;
@@ -97,10 +120,51 @@ class CouponActivityAction extends ApiTokenAction
             echo json_encode($result);exit;
         }
 
-        $activity = $model->getPointTypeInfo($userType);
-        $result['data']['activity'] = $activity;
-        $result['data']['type'] = $userType;
-        $result['info'] = 'success';
+        $auth = $this->checkAuth(false);
+        if (empty($auth)) {
+            $userType = 'new';
+            $uid = 0;
+        } else {
+            $user = $this->getUserInfo();
+            $uid = $user['uid'];
+            $userType = $model->getUserType($user['uid']);
+        }
+
+        $activity = $model->getPointTypeInfo($userType, $uid);
+        $result = [
+            'info' => 'success',
+            'data' => ['type' => $userType, 'iosbutton' => $iosbutton, 'activity' => $activity],
+        ];
         echo json_encode($result);exit;
+    }
+
+    protected function checkAuth($throw = true)
+    {
+    	$token = $_REQUEST['token'];
+    	$validToken = md5(date('Y-n-j').'liupinsy');
+    	if ($token != $validToken) {
+            if (!$throw) {
+                return false;
+            }
+            $result = [
+                'info' => '有新内容,请重新进入1' . '-' . $validToken,
+                'status' => 0,
+                'data' => null,
+            ];
+    	    echo json_encode($result);exit;
+    	}
+        return true;
+    }
+
+    protected function getUserInfo()
+    {
+        $uid = intval($_REQUEST['mid']);
+        $user = M('user')->where(['uid' => $uid])->find();
+        return $user;
+    }
+
+    protected function getCouponModel()
+    {
+        return new CouponActivityModel();
     }
 }
