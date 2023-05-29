@@ -21,45 +21,7 @@ class CouponActivityAction
         $model = $this->getCouponModel();
         $user = $this->getUserInfo();
         $price = $_REQUEST['price'];
-        $couponData = $model->getMyValidCoupons($user['uid'], 'full');
-        $maxDiscount = 0;
-        $coupons = $couponData['coupons'];
-        $newCoupons = $disableCoupons = [];
-
-        $bestInfo = $model->getSkuCoupon($price, $couponData['myCouponNum'], $couponData['coupons']);
-        $availableNum = 0;
-        foreach ($coupons as $coupon) {
-
-            $coupon['disable'] = 0;
-            $coupon['disable_reason'] = '';
-
-            if ($coupon['type'] == 1 && $price < $coupon['fullNum']) {
-                $coupon['disable'] = 1;
-                $coupon['disable_reason'] = '金额没达到满减额度';
-                $disableCoupons[] = $coupon;
-            } else {
-                $availableNum++;
-                $maxDiscount = max($maxDiscount, $coupon['money']);
-                $newCoupons[$coupon['id']] = $coupon;
-
-                if ($bestInfo && strval($bestInfo['coupon_money']) == strval($coupon['money'])) {
-                    $bestId = $coupon['id'];
-                }
-            }
-        }
-        if (empty($availableNum)) {
-            $couponData['couponTitle'] = '';
-            $couponData['tagDoc'] = '';
-            $couponData['bannerDoc'] = '';
-        }
-        $bestCoupon = [];
-        if (!empty($bestInfo) && !empty($bestInfo['coupon_id'])) {
-            $bestCoupon = $newCoupons[$bestInfo['coupon_id']];
-            unset($newCoupons[$bestInfo['coupon_id']]);
-            array_unshift($newCoupons, $bestCoupon);
-        }
-        $couponData['coupons'] = array_merge(array_values($newCoupons), $disableCoupons);
-        $couponData['maxDiscount'] = $maxDiscount;
+        $couponData = $model->getCouponsWithPrice($user['uid'], $price);
         $result = [
             'status' => 1,
             'info' => 'success',
@@ -158,7 +120,7 @@ class CouponActivityAction
             echo json_encode($result);exit;
         }
 
-        $auth = false;//$this->checkAuth(false);
+        $auth = $this->checkAuth(false);
         if (empty($auth)) {
             $userType = 'new';
             $uid = 0;

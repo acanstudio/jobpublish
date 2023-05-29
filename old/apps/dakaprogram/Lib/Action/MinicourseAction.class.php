@@ -34,7 +34,7 @@ class MinicourseAction extends ApiTokenAction
 
         // coupon-info v3.0.2
         $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
-        $ajaxreturn['coupon_info'] = $model->courseCouponInfo($mid);
+        $ajaxreturn['coupon_info'] = $model->courseCouponInfo($mid, $ajaxreturn['low_price']);
         // end coupon-info v3.0.2
 
         $this->ajaxreturn($ajaxreturn, "查询成功", 1);
@@ -455,6 +455,12 @@ class MinicourseAction extends ApiTokenAction
         $ajaxreturn['circle_id']      = $this->courseCircleId($id);
         $ajaxreturn['iosbutton']      = $this->iosbutton();
         // $ajaxreturn['buy_status']     = $this->coursebuyState($id, $mid);
+
+        // coupon-info v3.0.2
+        $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
+        $ajaxreturn['coupon_info'] = $model->courseCouponInfo($mid);
+        // end coupon-info v3.0.2
+
         $this->ajaxreturn($ajaxreturn, "查询成功", 1);
 
     }

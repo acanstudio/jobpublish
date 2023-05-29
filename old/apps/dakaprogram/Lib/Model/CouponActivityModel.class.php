@@ -41,13 +41,21 @@ class CouponActivityModel extends Model
         $activity = false;
         if (!empty($lastCoupon)) {
             $activity = M('coupon_activity')->where(['id' => $lastCoupon['activity_id']])->find();
+            if ($activity['status'] == 1) {
+                $statusStr = $activity['activity_type'] == 'event' ? '(1, 2)' : '(1)';
+                $bSql = "SELECT * FROM `el_coupon_activity_batch` WHERE `coupon_activity_id` = {$activity['id']} AND `status` IN {$statusStr} AND (`end_at` IS NULL OR (`end_at` > '{$cDate}')) AND `send_num` < `total_num`";
+                $bInfos = M()->query($bSql);
+                if (empty($bInfos)) {
+                    $activity['status'] = 0;
+                }
+            }
         }
         
         $baseData = [
             'myCouponNum' => count($r),
             'couponTitle' => $activity && $activity['status'] == 1 ? $activity['banner_doc'] : '',
-            'tagDoc' => $activity ? $activity['tag_doc'] : '',
-            'bannerDoc' => $activity ? $activity['banner_doc'] : '',
+            'tagDoc' => $activity && $activity['status'] == 1 ? $activity['tag_doc'] : '',
+            'bannerDoc' => $activity && $activity['status'] == 1 ? $activity['banner_doc'] : '',
             'activityId' => $activity ? $activity['id'] : 0,
         ];
         if ($type == 'simple') {
@@ -189,12 +197,14 @@ class CouponActivityModel extends Model
             }
         }
         $infos = $this->getValidActivities($type);
+        foreach ($infos as $keyPre => $info) {
+            $existCouponNum = M('coupon_activity_user')->where(['uid' => $user['uid'], 'coupon_activity_id' => $info['coupon_activity_id']])->count();
+            if ($existCouponNum) {
+                unset($info[$keyPre]);
+            }
+        }
         $couponNum = 0;
         foreach ($infos as $key => $info) {
-            $coupons = M('coupon_activity_user')->where(['uid' => $user['uid'], 'activity_type' => $ifno['activity_type']])->count();
-            if ($coupons) {
-                break;
-            }
             if ($key > 0) {
                 if ($infos[$key]['coupon_activity_id'] != $infos[$key - 1]['coupon_activity_id'] && !empty($couponNum)) {
                     break;
@@ -335,7 +345,7 @@ class CouponActivityModel extends Model
         return $result;
     }
 
-    public function courseCouponInfo($uid)
+    public function courseCouponInfo($uid, $price)
     {
         if (empty($uid)) {
             $aInfos = $this->getValidActivities('new');
@@ -347,7 +357,8 @@ class CouponActivityModel extends Model
                 'coupon_list' => [],
             ];
         }
-        $couponData = $this->getMyValidCoupons($uid, 'full');
+        //$couponData = $this->getMyValidCoupons($uid, 'full');
+        $couponData = $this->getCouponsWithPrice($uid, $price);
         return [
             'coupon_num' => $couponData['myCouponNum'],
             'coupon_title' => $couponData['bannerDoc'],
@@ -505,5 +516,49 @@ class CouponActivityModel extends Model
         $info = array_pop($cPrices);
         $couponPrice = strval(number_format($skuPrice - $info['money'], 2));
         return ['coupon_valid' => 1, 'coupon_price' => $couponPrice, 'coupon_money' => $info['money'], 'coupon_id' => $info['coupon_id']];
+    }
+
+    public function getCouponsWithPrice($uid, $price)
+    {
+        $couponData = $this->getMyValidCoupons($uid, 'full');
+        $maxDiscount = 0;
+        $coupons = $couponData['coupons'];
+        $newCoupons = $disableCoupons = [];
+
+        $bestInfo = $this->getSkuCoupon($price, $couponData['myCouponNum'], $couponData['coupons']);
+        $availableNum = 0;
+        foreach ($coupons as $coupon) {
+
+            $coupon['disable'] = 0;
+            $coupon['disable_reason'] = '';
+
+            if ($coupon['type'] == 1 && $price < $coupon['fullNum']) {
+                $coupon['disable'] = 1;
+                $coupon['disable_reason'] = '金额没达到满减额度';
+                $disableCoupons[] = $coupon;
+            } else {
+                $availableNum++;
+                $maxDiscount = max($maxDiscount, $coupon['money']);
+                $newCoupons[$coupon['id']] = $coupon;
+
+                if ($bestInfo && strval($bestInfo['coupon_money']) == strval($coupon['money'])) {
+                    $bestId = $coupon['id'];
+                }
+            }
+        }
+        if (empty($availableNum)) {
+            $couponData['couponTitle'] = '';
+            $couponData['tagDoc'] = '';
+            $couponData['bannerDoc'] = '';
+        }
+        $bestCoupon = [];
+        if (!empty($bestInfo) && !empty($bestInfo['coupon_id'])) {
+            $bestCoupon = $newCoupons[$bestInfo['coupon_id']];
+            unset($newCoupons[$bestInfo['coupon_id']]);
+            array_unshift($newCoupons, $bestCoupon);
+        }
+        $couponData['coupons'] = array_merge(array_values($newCoupons), $disableCoupons);
+        $couponData['maxDiscount'] = $maxDiscount;
+        return $couponData;
     }
 }
