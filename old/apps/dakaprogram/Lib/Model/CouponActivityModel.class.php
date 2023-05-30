@@ -42,7 +42,7 @@ class CouponActivityModel extends Model
         if (!empty($lastCoupon)) {
             $activity = M('coupon_activity')->where(['id' => $lastCoupon['activity_id']])->find();
             if ($activity['status'] == 1) {
-                $statusStr = $activity['activity_type'] == 'event' ? '(1, 2)' : '(1)';
+                $statusStr = $activity['activity_type'] == 'event' ? '(1, 2)' : '(2)';
                 $bSql = "SELECT * FROM `el_coupon_activity_batch` WHERE `coupon_activity_id` = {$activity['id']} AND `status` IN {$statusStr} AND (`end_at` IS NULL OR (`end_at` > '{$cDate}')) AND `send_num` < `total_num`";
                 $bInfos = M()->query($bSql);
                 if (empty($bInfos)) {
@@ -147,6 +147,9 @@ class CouponActivityModel extends Model
 
     public function applyCoupon($user)
     {
+        if (empty($user)) {
+            return false;
+        }
         $couponData = $this->getMyValidCoupons($user['uid']);
         if ($couponData['myCouponNum'] >= 1) {
             return false;
@@ -198,8 +201,8 @@ class CouponActivityModel extends Model
         }
         $infos = $this->getValidActivities($type);
         foreach ($infos as $keyPre => $info) {
-            $existCouponNum = M('coupon_activity_user')->where(['uid' => $user['uid'], 'coupon_activity_id' => $info['coupon_activity_id']])->count();
-            if ($existCouponNum) {
+            $existCouponNum = M('coupon_activity_user')->where(['uid' => $user['uid'], 'activity_id' => $info['coupon_activity_id']])->count();
+            if ($existCouponNum && $info['activity_type'] == 'event') {
                 unset($infos[$keyPre]);
             }
         }
@@ -389,15 +392,17 @@ class CouponActivityModel extends Model
         }
         $diff = $endTime - $now;
         if ($diff > 86400 * 10) {
-            return date('m-d', $endTime) . '到期';
+            return date('m月d日', $endTime) . '到期';
         }
         if ($diff > 86400) {
             $days = ceil($diff / 86400);
             return "{$days}天后到期";
         }
-        $str = date('d', $endTime) != date('d', $now) ? '明日' : '今日';
+        $timeStr = date('H:i', $endTime);
+        $str = date('d', $endTime) != date('d', $now) && $timeStr != '00:00' ? '明日' : '今日';
+        $timeStr = $timeStr == '00:00' ? '23:59' : $timeStr;
         ////var_dump($endAt);var_dump(date('d', $endAt));var_dump(date('d', $now));
-        return $str . date('H:i', $endTime) . '到期';
+        return $str . $timeStr . '到期';
     }
 
     public function getCourseTag($id)
@@ -426,13 +431,14 @@ class CouponActivityModel extends Model
         }
         $money = $info['cut_num'] == intval($info['cut_num']) ? intval($info['cut_num']) : $info['cut_num'];
         $expireAt = $this->formatExpire($info['end_at'], $info['used_at']);
+        $fullNum = $info['full_num'] == intval($info['full_num']) ? intval($info['full_num']) : $info['full_num'];
         $data = [
             'id' => $info['id'],
             'name' => $info['name'],
             'type' => $info['type'],
-            'brief' => $info['type'] == 1 ? '满' . $info['full_num'] . '使用' : '无门槛使用',//$batch ? $batch['brief'] : '',
+            'brief' => $info['type'] == 1 ? '满' . $fullNum . '使用' : '无门槛使用',//$batch ? $batch['brief'] : '',
             'money' => $money,
-            'fullNum' => $info['full_num'],
+            'fullNum' => $fullNum,
             'expireAt' => $expireAt,
             'endAt' => $info['end_at'] ? date('Y.m.d H:i', strtotime($info['end_at'])) : '',
             'isNotice' => strpos($expireAt, '今日') !== false || strpos($expireAt, '明日') !== false ? 1 : 0,
@@ -445,7 +451,7 @@ class CouponActivityModel extends Model
     protected function getValidActivities($type)
     {
         $cDate = date('Y-m-d H:i:s');
-        $sql = "SELECT * FROM `el_coupon_activity` AS `ca`, `el_coupon_activity_batch` AS `b` WHERE `ca`.`status` = 1 AND `ca`.`activity_type` = '{$type}' AND `ca`.`id` = `b`.`coupon_activity_id` AND `b`.`status` = 2 AND `b`.`total_num` > `b`.`send_num` AND (`b`.`end_at` IS NULL OR `b`.`end_at` > '{$cDate}') ORDER BY `ca`.`created_at` DESC;";
+        $sql = "SELECT * FROM `el_coupon_activity` AS `ca`, `el_coupon_activity_batch` AS `b` WHERE `ca`.`status` = 1 AND `ca`.`activity_type` = '{$type}' AND (`ca`.`end_at` IS NULL OR `ca`.`end_at` > '{$cDate}') AND (`ca`.`start_at` IS NULL OR `ca`.`start_at` <= '{$cDate}') AND `ca`.`id` = `b`.`coupon_activity_id` AND `b`.`status` = 2 AND `b`.`total_num` > `b`.`send_num` AND (`b`.`end_at` IS NULL OR `b`.`end_at` > '{$cDate}') AND (`b`.`start_at` IS NULL OR `b`.`start_at` <= '{$cDate}') ORDER BY `ca`.`created_at` DESC;";
         $infos = M()->query($sql);
         return $infos;
     }
@@ -548,11 +554,11 @@ class CouponActivityModel extends Model
                 }
             }
         }
-        if (empty($availableNum)) {
+        /*if (empty($availableNum)) {
             $couponData['couponTitle'] = '';
             $couponData['tagDoc'] = '';
             $couponData['bannerDoc'] = '';
-        }
+        }*/
         $bestCoupon = [];
         if (!empty($bestInfo) && !empty($bestInfo['coupon_id'])) {
             $bestCoupon = $newCoupons[$bestInfo['coupon_id']];
@@ -562,5 +568,26 @@ class CouponActivityModel extends Model
         $couponData['coupons'] = array_merge(array_values($newCoupons), $disableCoupons);
         $couponData['maxDiscount'] = $maxDiscount;
         return $couponData;
+    }
+
+    public function backCoupon($user)
+    {
+        if (empty($user)) {
+            return false;
+        }
+        $isNew = $this->isNew($user);
+        if ($isNew) {
+            return false;
+        }
+        $isBack = $this->isBack($user);
+        if (empty($isBack)) {
+            return false;
+        }
+        $couponData = $this->getMyValidCoupons($user['uid']);
+        if ($couponData['myCouponNum'] >= 1) {
+            return false;
+        }
+        
+        return $this->dispatchCoupon($user, 'back');
     }
 }

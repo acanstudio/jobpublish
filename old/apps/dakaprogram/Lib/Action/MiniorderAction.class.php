@@ -204,10 +204,15 @@ class MiniorderAction extends ApiTokenAction
                 $this->ajaxReturn('', $couponInfo, 0);
             }
             $price = $pay_price;
+        } else {
+            $couponData = $model->getCouponsWithPrice($mid, $sku['price']);
+            if ($couponData['myCouponNum'] && $pay_price != $sku['price']) {
+                $this->ajaxReturn('', '需要使用原价支付', 0);
+            }
         }
         // end coupon-info v3.0.2
 
-        if ($price != $pay_price) {
+        if ($price != $pay_price && $pay_price != $sku['price']) { // coupon-3.0.2 当有优惠券时，但优惠券不能用于sku时，用sku的原件
             $this->ajaxReturn('', '支付值错误', 0);
         }
         if ($paytype == 'wxpay') {

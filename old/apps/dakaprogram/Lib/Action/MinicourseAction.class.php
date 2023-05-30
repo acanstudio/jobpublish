@@ -11,8 +11,35 @@ class MinicourseAction extends ApiTokenAction
         $mid                          = $uid                          = intval($_REQUEST['mid']);
         $rs                           = M('mini_course')->find($id);
         $ajaxreturn['id']             = $rs['id'];
-        $ajaxreturn['low_price']      = $low_price      = $this->lowPrice($id);
-        $ajaxreturn['high_price']     = $high_price     = $this->highPrice($id);
+
+        $low_price = $this->lowPrice($id);
+        $high_price     = $this->highPrice($id);
+
+        // coupon-info v3.0.2
+        $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
+        $realLowPrice = $this->realLowPrice($id, $uid);
+        $couponData = $model->courseCouponInfo($mid, 0);
+        if (empty($realLowPrice)) {
+            $couponData['coupon_title'] = '';
+            $ajaxreturn['coupon_info'] = $couponData;
+        } else {
+            $realHighPrice = $this->realHighPrice($id, $uid);
+            $lowCoupon = $model->courseCouponInfo($mid, $realLowPrice);
+            $highCoupon = $realLowPrice == $realHighPrice ? $lowCoupon : $model->courseCouponInfo($mid, $realHighPrice);
+            if ($lowCoupon['coupon_num']) {
+                $low_price = $realLowPrice - $lowCoupon['max_discount'];
+                $low_price = $low_price <= 0 ? 0.01 : $low_price;
+            }
+            if ($highCoupon['coupon_num']) {
+                $high_price = $realHighPrice - $highCoupon['max_discount'];
+                $high_price = $high_price <= 0 ? 0.01 : $high_price;
+            }
+            $ajaxreturn['coupon_info'] = $couponData;
+        }
+        // end coupon-info v3.0.2
+
+        $ajaxreturn['low_price']      = $low_price;
+        $ajaxreturn['high_price']     = $high_price;
         $ajaxreturn['is_one_price']   = $low_price == $high_price ? 1 : 0;
         $ajaxreturn['one_price']      = $low_price;
         $ajaxreturn['bofang_num']     = $this->turnToW($rs['real_click'] + $rs['market_click'] * 10000);
@@ -31,12 +58,6 @@ class MinicourseAction extends ApiTokenAction
         $ajaxreturn['iosbutton']  = $this->iosbutton();
         $ajaxreturn['is_publish'] = $rs['is_publish'];
         //$ajaxreturn['iosbutton']      = 0;
-
-        // coupon-info v3.0.2
-        $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
-        $ajaxreturn['coupon_info'] = $model->courseCouponInfo($mid, $this->realLowPrice($id, $uid));
-        // end coupon-info v3.0.2
-
         $this->ajaxreturn($ajaxreturn, "查询成功", 1);
     }
     public function coursebuyState($id = 0, $mid = 0)
@@ -95,13 +116,21 @@ class MinicourseAction extends ApiTokenAction
             return floor($f / 10000) . "万";
         }
     }
-    public function realLowPrice($id = 0, $uid)
+    public function realLowPrice($id = 0, $uid = 0)
     {
         $data['course_id']  = $id;
         $data['is_publish'] = 1;
-        //$sql = "SELECT `el_mini_course_sku` AS `cs`, `el_mini_course_order` AS `o` WHERE UPDATE `el_mini_course` SET `real_click`=real_click +1 where `id`=" . intval($course_id);
-        $RS                 = M('mini_course_sku')->where($data)->order('price asc')->getField('price');
-        return $RS;
+        $sql = "SELECT * FROM `el_mini_course_sku` WHERE `course_id` = {$id} AND `is_publish` = 1 AND `id` NOT IN (SELECT `course_sku_id` FROM `el_mini_course_order` WHERE `uid` = {$uid} AND `course_id` = {$id} AND `pay_status` = 3) ORDER BY `price` ASC;";
+        $sku = M()->query($sql);
+        return $sku ? $sku[0]['price'] : 0;
+    }
+    public function realHighPrice($id = 0, $uid = 0)
+    {
+        $data['course_id']  = $id;
+        $data['is_publish'] = 1;
+        $sql = "SELECT * FROM `el_mini_course_sku` WHERE `course_id` = {$id} AND `is_publish` = 1 AND `id` NOT IN (SELECT `course_sku_id` FROM `el_mini_course_order` WHERE `uid` = {$uid} AND `course_id` = {$id} AND `pay_status` = 3) ORDER BY `price` DESC;";
+        $sku = M()->query($sql);
+        return $sku ? $sku[0]['price'] : 0;
     }
     public function lowPrice($id = 0)
     {

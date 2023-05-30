@@ -395,11 +395,7 @@ class HuatiV283Action extends ApiTokenAction
         if (!empty($last_login_time)) {
             $user = M('user')->where(['uid' => $mid])->find();
             $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
-            $isBack = $model->isBack($user);
-            var_dump($isBack);
-            if ($isBack) {
-                $model->dispatchCoupon($user, 'back');
-            }
+            $model->backCoupon($user);
         }
         // end coupon-info v3.0.2
 

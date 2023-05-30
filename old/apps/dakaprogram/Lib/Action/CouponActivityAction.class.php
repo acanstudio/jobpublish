@@ -57,6 +57,12 @@ class CouponActivityAction
         $auth = $this->checkAuth();
         $model = $this->getCouponModel();
         $user = $this->getUserInfo();
+        $redis = Redis::getInstance();
+        $redisKey = 'liupinshuyuan_miniprogram_apply_coupon_' . $user['uid'];
+        if ($redis->get($redisKey)) {
+            echo json_encode(['status' => 1, 'info' => 'sucess', 'data' => '过于频繁']);exit();
+        }
+        $redis->setex($redisKey, 5, '1');
 
         $result['status'] = 1;
         $result['info'] = 'success';
