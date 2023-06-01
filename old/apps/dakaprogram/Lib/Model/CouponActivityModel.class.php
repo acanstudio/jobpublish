@@ -201,8 +201,7 @@ class CouponActivityModel extends Model
         }
         $where = ['uid' => $user['uid'], 'rel_type' => 'today_login'];
         $todayTime = strtotime(date('Y-m-d'));
-        $pointTime = $cTime - 300;
-        $info = M('credit_user_flow')->where("uid = {$uid} AND rel_type = 'today_login' AND ctime <= {$todayTime}")->order('ctime desc')->find();
+        $info = M('credit_user_flow')->where("uid = {$user['uid']} AND rel_type = 'today_login' AND ctime < {$todayTime}")->order('ctime desc')->find();
         if (empty($info)) {
             return true;
         }

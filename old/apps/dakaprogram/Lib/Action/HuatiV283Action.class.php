@@ -396,12 +396,16 @@ class HuatiV283Action extends ApiTokenAction
         // coupon-info v3.0.2
         if (!empty($last_login_time)) {
             $user = M('user')->where(['uid' => $mid])->find();
-            $redis = Redis::getInstance();
+            if (!empty($user)) {
+                $action = new CouponActivityAction();
+                $r = $action->applyCoupon($user);
+            }
+            /*$redis = Redis::getInstance();
             $redisKey = 'liupinshuyuan_miniprogram_apply_coupon_' . $user['uid'];
             if (!$redis->get($redisKey)) {
                 $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
                 $model->backCoupon($user);
-            }
+            }*/
         }
         // end coupon-info v3.0.2
 

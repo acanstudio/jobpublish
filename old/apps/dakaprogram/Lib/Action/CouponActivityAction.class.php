@@ -52,21 +52,33 @@ class CouponActivityAction
      * 申请获取优惠券
      *
      */
-    public function applyCoupon()
+    public function applyCoupon($pointUser = null)
     {
-        $auth = $this->checkAuth();
+        if (is_null($pointUser)) {
+            $auth = $this->checkAuth();
+            $user = $this->getUserInfo();
+        } else {
+            $user = $pointUser;
+        }
         $model = $this->getCouponModel();
-        $user = $this->getUserInfo();
         $redis = Redis::getInstance();
         $redisKey = 'liupinshuyuan_miniprogram_apply_coupon_' . $user['uid'];
         if ($redis->get($redisKey)) {
-            echo json_encode(['status' => 1, 'info' => 'sucess', 'data' => '过于频繁']);exit();
+            if (is_null($pointUser)) {
+                echo json_encode(['status' => 1, 'info' => 'sucess', 'data' => '过于频繁']);exit();
+            } else {
+                return false;
+            }
         }
         $redis->setex($redisKey, 5, '1');
+        $rData = $model->applyCoupon($user);
+        if (!is_null($pointUser)) {
+            return $rData;
+        }
 
         $result['status'] = 1;
         $result['info'] = 'success';
-        $result['data'] = $model->applyCoupon($user);
+        $result['data'] = $rData;
         echo json_encode($result);exit;
     }
 
