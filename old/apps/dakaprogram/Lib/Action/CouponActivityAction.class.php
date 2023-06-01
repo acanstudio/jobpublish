@@ -153,7 +153,7 @@ class CouponActivityAction
                 return false;
             }
             $result = [
-                'info' => '有新内容,请重新进入1' . '-' . $validToken,
+                'info' => '有新内容,请重新进入1',
                 'status' => 0,
                 'data' => null,
             ];

@@ -14,6 +14,16 @@ class CouponActivityModel extends Model
                 return [];
             }
             $activity = M('coupon_activity')->where(['id' => $info['activityId']])->find();
+            if (empty($activity) || empty($activity['status'])) {
+                return [];
+            }
+            $statusStr = $activity['activity_type'] == 'event' ? '(1, 2)' : '(2)';
+            $bSql = "SELECT * FROM `el_coupon_activity_batch` WHERE `coupon_activity_id` = {$activity['id']} AND `status` IN {$statusStr} AND (`end_at` IS NULL OR (`end_at` > '{$cDate}')) AND `send_num` < `total_num`";
+            $bInfos = M()->query($bSql);
+            if (empty($bInfos)) {
+                return [];
+            }
+            
             return $activity;
         }
         $infos = $this->getValidActivities('new');
@@ -181,10 +191,25 @@ class CouponActivityModel extends Model
         $cTime = time();
         $info = M('dk_user_info')->where(['uid' => $user['uid']])->find();
         $lastLoginTime = $info['last_login_time'];
-        if (empty($lastLoginTime)) {
+        if (!empty($lastLoginTime)) {
+            $diff = $cTime - strtotime($lastLoginTime);
+            if ($diff >= 86400 * 30) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        $where = ['uid' => $user['uid'], 'rel_type' => 'today_login'];
+        $todayTime = strtotime(date('Y-m-d'));
+        $pointTime = $cTime - 300;
+        $info = M('credit_user_flow')->where("uid = {$uid} AND rel_type = 'today_login' AND ctime <= {$todayTime}")->order('ctime desc')->find();
+        if (empty($info)) {
             return true;
         }
-        $diff = $cTime - strtotime($lastLoginTime);
+
+        $diff = $cTime - $info['ctime'];
+        /*$log_file = './data/upload/dakaprogram/coupon.txt';
+        file_put_contents($log_file, "\r\n {$user['uid']} - {$diff} \r\n", FILE_APPEND);*/
         if ($diff >= 86400 * 30) {
             return true;
         }
@@ -467,7 +492,7 @@ class CouponActivityModel extends Model
         }
 
         $realPrice = $price - $info['cut_num'];
-        $realPrice = $realPrice <= 0 ? 0.01 : $pay_price;
+        $realPrice = $realPrice <= 0 ? 0.01 : $realPrice;
         //if ($realPrice != 0.01 && $realPrice != $pay_price) {
         if ($realPrice != $pay_price) {
             return '优惠额度有误：' . $realPrice . '=' . $pay_price . '-' . $info['cut_num'];
@@ -589,5 +614,19 @@ class CouponActivityModel extends Model
         }
         
         return $this->dispatchCoupon($user, 'back');
+    }
+
+    public function isIosDevice()
+    {
+        $agent = strtolower($_SERVER['HTTP_USER_AGENT']);
+        $isIphone = (strpos($agent, 'iphone')) ? true : false;   
+        if ($isIphone) {
+            return true;
+        }
+        $isIpad = (strpos($agent, 'ipad')) ? true : false;   
+        if ($isIpad) {
+            return true;
+        }
+        return false;
     }
 }

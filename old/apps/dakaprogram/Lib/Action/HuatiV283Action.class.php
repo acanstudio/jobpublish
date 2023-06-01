@@ -1,6 +1,8 @@
 <?php
 namespace App\dakaprogram\Lib\Action;
 
+use Library\Redis\Redis;
+
 /**
  * 打卡小程序排行榜
  * @author   @lee
@@ -394,8 +396,12 @@ class HuatiV283Action extends ApiTokenAction
         // coupon-info v3.0.2
         if (!empty($last_login_time)) {
             $user = M('user')->where(['uid' => $mid])->find();
-            $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
-            $model->backCoupon($user);
+            $redis = Redis::getInstance();
+            $redisKey = 'liupinshuyuan_miniprogram_apply_coupon_' . $user['uid'];
+            if (!$redis->get($redisKey)) {
+                $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
+                $model->backCoupon($user);
+            }
         }
         // end coupon-info v3.0.2
 
