@@ -101,9 +101,6 @@ class CouponActivity extends Model
             return '未发布';
         }
         $now = Carbon::now();
-        if ($this->start_at && $now < Carbon::parse($this->start_at)) {
-            return '未开始';
-        }
         $batchModel = new CouponActivityBatch();
         $nowDate = $now->format('Y-m-d H:i:s');
         if (!empty($this->end_at) && $this->end_at < $nowDate) {
@@ -114,6 +111,9 @@ class CouponActivity extends Model
         })->count();
         if (!$validCount) {
             return '已结束';
+        }
+        if ($this->start_at && $now < Carbon::parse($this->start_at)) {
+            return '未开始';
         }
         return '进行中';
     }
@@ -139,9 +139,10 @@ class CouponActivity extends Model
         $batchDatas = CouponActivityBatch::where(['coupon_activity_id' => $this->id])->get();
         $results = [];
         $statusValues = [1 => '未开始', 2 => '进行中', 3 => '已结束', 4 => '已失效'];
+        $service = new CouponActivityService();
 
         foreach ($batchDatas as $batch) {
-            $batch['status'] = $batch['send_num'] >= $batch['total_num'] ? 4 : $batch['status'];
+            $batch['status'] = $service->formatBatchStatus($batch);
             $results[] = [
                 'batch_id' => $batch['batch_id'],
                 'name' => $batch['name'],
