@@ -490,11 +490,11 @@ class CouponActivityModel extends Model
             return '满减优惠券的满减额度为：' . $info['full_num'];
         }
 
-        $realPrice = $price - $info['cut_num'];
+        $realPrice = round($price - $info['cut_num'], 2);
         $realPrice = $realPrice <= 0 ? 0.01 : $realPrice;
         //if ($realPrice != 0.01 && $realPrice != $pay_price) {
         if ($realPrice != $pay_price) {
-            return '优惠额度有误：' . $realPrice . '=' . $pay_price . '-' . $info['cut_num'];
+            return '优惠额度有误！';// . $realPrice . '=' . $pay_price . '-' . $info['cut_num'];
         }
         return $info;
     }
@@ -545,7 +545,7 @@ class CouponActivityModel extends Model
 
         krsort($cPrices);
         $info = array_pop($cPrices);
-        $couponPrice = strval(number_format($skuPrice - $info['money'], 2));
+        $couponPrice = round($skuPrice - $info['money'], 2);
         $couponPrice = $couponPrice == intval($couponPrice) ? intval($couponPrice) : $couponPrice;
         return ['coupon_valid' => 1, 'coupon_price' => $couponPrice, 'coupon_money' => $info['money'], 'coupon_id' => $info['coupon_id']];
     }

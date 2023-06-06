@@ -54,13 +54,22 @@ class CouponActivityAction
      */
     public function applyCoupon($pointUser = null)
     {
+        $isIos = intval($_REQUEST['isIos']);
+        $model = $this->getCouponModel();
+        $iosbutton = $model->getIosbutton();
+        if ($isIos && empty($iosbutton)) {
+            if (is_null($pointUser)) {
+                echo json_encode(['status' => 1, 'info' => 'sucess', 'data' => 'IOS']);exit();
+            } else {
+                return false;
+            }
+        }
         if (is_null($pointUser)) {
             $auth = $this->checkAuth();
             $user = $this->getUserInfo();
         } else {
             $user = $pointUser;
         }
-        $model = $this->getCouponModel();
         $redis = Redis::getInstance();
         $redisKey = 'liupinshuyuan_miniprogram_apply_coupon_' . $user['uid'];
         if ($redis->get($redisKey)) {
@@ -133,10 +142,10 @@ class CouponActivityAction
         $model = $this->getCouponModel();
         $iosbutton = $model->getIosbutton();
         $result['status'] = 1;
-        $result['data']['iosbutton'] = $iosbutton;
-        if (empty($iosbutton)) {
+        //$result['data']['iosbutton'] = $iosbutton;
+        /*if (empty($iosbutton)) {
             echo json_encode($result);exit;
-        }
+        }*/
 
         $auth = $this->checkAuth(false);
         if (empty($auth)) {

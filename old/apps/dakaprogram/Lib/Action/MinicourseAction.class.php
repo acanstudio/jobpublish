@@ -387,6 +387,9 @@ class MinicourseAction extends ApiTokenAction
                 unset($va[$kz]);
             }
         }
+        usort($va, function($a1, $a2) {
+            return $a1['num'] < $a2['num'];
+        });
         return array_values($va);
     }
     public function evaluationinfo()
@@ -410,8 +413,9 @@ class MinicourseAction extends ApiTokenAction
         $map['_complex']  = $where;
         $map['course_id'] = $id;
         $map['is_hide']   = 0;
+        $map['created_at'] = ['elt', date('Y-m-d H:i:s')];
         //$map['quick_ids'] = array('exp', 'not null');
-        $res = M('mini_course_evaluation')->field('id,uid,review_content,star,quick_ids,quick_title,created_at')->where($map)->order('rand()')->findPage(6);
+        $res = M('mini_course_evaluation')->field('id,uid,review_content,star,quick_ids,quick_title,created_at')->where('created_at', '<=', $cDate)->where($map)->order('created_at desc')->findPage(6);
         $p   = $_REQUEST['p'];
         if ($p > $res['totalPages']) {
             $res['data'] = array();
