@@ -200,7 +200,7 @@ class CouponActivityModel extends Model
         foreach ($infos as $keyPre => $info) {
             $existCouponNum = M('coupon_activity_user')->where(['uid' => $user['uid'], 'coupon_activity_id' => $info['coupon_activity_id']])->count();
             if ($existCouponNum) {
-                unset($info[$keyPre]);
+                unset($infos[$keyPre]);
             }
         }
         $couponNum = 0;
@@ -473,6 +473,7 @@ class CouponActivityModel extends Model
     {
         foreach ($skuDatas as & $skuData) {
             $skuCoupon = $this->getSkuCoupon($skuData['price'], $couponData['coupon_num'], $couponData['coupon_list']);
+            $skuData['price'] = $skuData['price'] == intval($skuData['price']) ? intval($skuData['price']) : $skuData['price'];
             $skuData['coupon_valid'] = $skuCoupon['coupon_valid'];
             $skuData['coupon_price'] = $skuCoupon['coupon_price'];
             $skuData['coupon_money'] = $skuCoupon['coupon_money'];
@@ -485,7 +486,7 @@ class CouponActivityModel extends Model
     {
         $valid = 0;
         $price = 0;
-        $default = ['coupon_valid' => $valid, 'coupon_price' => $price, 'coupon_money' => 0];
+        $default = ['coupon_valid' => $valid, 'coupon_price' => $price, 'coupon_money' => 0, 'coupon_id' => 0];
         if ($couponNum < 1) {
             return $default;
         }
@@ -515,6 +516,7 @@ class CouponActivityModel extends Model
         krsort($cPrices);
         $info = array_pop($cPrices);
         $couponPrice = strval(number_format($skuPrice - $info['money'], 2));
+        $couponPrice = $couponPrice == intval($couponPrice) ? intval($couponPrice) : $couponPrice;
         return ['coupon_valid' => 1, 'coupon_price' => $couponPrice, 'coupon_money' => $info['money'], 'coupon_id' => $info['coupon_id']];
     }
 
@@ -532,7 +534,7 @@ class CouponActivityModel extends Model
             $coupon['disable'] = 0;
             $coupon['disable_reason'] = '';
 
-            if ($coupon['type'] == 1 && $price < $coupon['fullNum']) {
+            if ($coupon['type'] == 1 && (!empty($price) && $price < $coupon['fullNum'])) {
                 $coupon['disable'] = 1;
                 $coupon['disable_reason'] = '金额没达到满减额度';
                 $disableCoupons[] = $coupon;
