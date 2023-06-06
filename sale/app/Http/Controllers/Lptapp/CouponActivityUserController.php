@@ -38,13 +38,14 @@ class CouponActivityUserController extends Controller
         $couponNameId = request()->input('coupon_name_id');
         if (!empty($couponNameId)) {
             $query = $query->where(function($query) use ($couponNameId) {
-                $query->where('coupon', $couponNameId)->orWhere('name', 'like', "%{$couponNameId}%");
+                //$query->where('coupon', $couponNameId)->orWhere('name', 'like', "%{$couponNameId}%");
+                $query->where('name', 'like', "%{$couponNameId}%");
             });
         }
 
         $timeType = request()->input('time_type');
-        $startTime = request()->input('start_time');
-        $endTime = request()->input('end_time');
+        $startTime = request()->input('created_at');
+        $endTime = request()->input('end_at');
 
         if (!empty($timeType) && (!empty($startTime) || !empty($endTime))) {
             $timeFields = ['use' => 'used_at', 'end' => 'end_at', 'get' => 'created_at'];
@@ -57,8 +58,8 @@ class CouponActivityUserController extends Controller
             }
         }
 
-        $pageSize = $download ? 500 : 10;
-        $data = $query->orderByDesc('id')->paginate($request->input('per_page', $pageSize));
+        $pageSize = $download ? 500 : $request->input('per_page', 10);
+        $data = $query->orderByDesc('id')->paginate($pageSize);
 
 		$data->map(function ($item){
             $userData = User::find($item->uid);
@@ -102,6 +103,10 @@ class CouponActivityUserController extends Controller
      */
     public function export()
     {
+        $token = request()->input('token');
+        if ($this->falseToken($token)) {
+            return responseJsonHttp(400, 'Token error');
+        }
         $file = 'export_coupon_user_' . date('Y-m-d-H-i-s') . '.xlsx';
         $datas = $this->list(true);
         $fields = [
@@ -135,5 +140,17 @@ class CouponActivityUserController extends Controller
     protected function getModel()
     {
         return new CouponActivityUser();
+    }
+
+    public function falseToken($token)
+    {
+        $date = date('Ymd');
+        $md5  = md5($date . 'lpsy');
+        //return 0;
+        if ($md5 !== $token) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 }

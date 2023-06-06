@@ -101,6 +101,8 @@ class CouponActivityController extends Controller
             case 'running':
                 $query = $query->where(['status' => 1])->where(function ($query) use ($cDate) {
                     $query->whereNull('end_at')->orWhere('end_at', '>', $cDate);
+                })->where(function ($query) use ($cDate) {
+                    $query->whereNull('start_at')->orWhere('start_at', '<=', $cDate);
                 })->where(function($query) {
                     $query->whereHasIn('batchDatas', function ($query) {
                         return $query->whereColumn('total_num', '>', 'send_num')->where('status', 2)->where(function ($query) {
@@ -111,17 +113,16 @@ class CouponActivityController extends Controller
                 });
                 break;
             case 'finish':
-                $query = $query->where(function ($query) use ($cDate) {
-                    $query->whereNotNull('end_at')->where('end_at', '<', $cDate);
-                })->orWhere(function($query) use ($cDate) {
-                    $query->whereHasIn('batchDatas', function ($query) use ($cDate) {
-                        return $query->whereIn('status', [0, 3, 4])->orWhere(function ($query) use ($cDate) {
-                            $query->whereColumn('total_num', '<', 'send_num')->orWhere(function ($query) use ($cDate) {
-                                $query->whereNotNull('end_at')->where('end_at', '<', $cDate);
-                            });
+                $query = $query->where(['status' => 1])->where(function ($query) use ($cDate) {
+                    $query->where(function ($query) use ($cDate) {
+                        $query->whereNotNull('end_at')->where('end_at', '<', $cDate);
+                    })->orWhereDoesntHave('batchDatas', function ($query) {
+                        return $query->whereColumn('total_num', '>', 'send_num')->whereIn('status', [1, 2])->where(function ($query) {
+                            $nowDate = date('Y-m-d H:i:s');
+                            $query->whereNull('end_at')->orWhere('end_at', '>', $nowDate);
                         });
                     });
-                })->where(['status' => 1]);
+                });
                 break;
             }
         }

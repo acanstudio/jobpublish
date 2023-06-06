@@ -1,5 +1,6 @@
 cp /usr/local/nginx/html/sale/app/Exceptions/BusinessException.php /home/www/selfpath//sale/app/Exceptions/BusinessException.php
 cp /usr/local/nginx/html/sale/app/Http/Controllers/Lptapp/CouponActivityController.php /home/www/selfpath//sale/app/Http/Controllers/Lptapp/CouponActivityController.php
+cp /usr/local/nginx/html/sale/app/Http/Controllers/Lptapp/AdminMiniCourseController.php /home/www/selfpath//sale/app/Http/Controllers/Lptapp/AdminMiniCourseController.php
 cp /usr/local/nginx/html/sale/app/Http/Controllers/Lptapp/CouponActivityUserController.php /home/www/selfpath//sale/app/Http/Controllers/Lptapp/CouponActivityUserController.php
 cp /usr/local/nginx/html/sale/app/Models/LptApp/CouponActivity.php /home/www/selfpath//sale/app/Models/LptApp/CouponActivity.php
 cp /usr/local/nginx/html/sale/app/Models/LptApp/CouponActivityBatch.php /home/www/selfpath//sale/app/Models/LptApp/CouponActivityBatch.php
@@ -10,5 +11,3 @@ cp /usr/local/nginx/html/sale/config/app.php /home/www/selfpath//sale/config/app
 cp /usr/local/nginx/html/sale/storage/responses/coupon/batch-list.json /home/www/selfpath//sale/storage/responses/coupon/batch-list.json
 cp /usr/local/nginx/html/sale/storage/responses/coupon/coupon-activity-list.json /home/www/selfpath//sale/storage/responses/coupon/coupon-activity-list.json
 cp /usr/local/nginx/html/sale/storage/responses/coupon/coupon-activity-user-list.json /home/www/selfpath//sale/storage/responses/coupon/coupon-activity-user-list.json
-cp /usr/local/nginx/html/sale/ /home/www/selfpath//sale/
-cp /usr/local/nginx/html/sale/app/Http/Controllers/Lptapp/AdminMiniOrderController.php /home/www/selfpath//sale/app/Http/Controllers/Lptapp/AdminMiniOrderController.php

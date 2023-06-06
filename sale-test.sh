@@ -10,5 +10,4 @@ cp /usr/local/nginx/html/sale/config/app.php /usr/local/nginx/html/selfdev_can_s
 cp /usr/local/nginx/html/sale/storage/responses/coupon/batch-list.json /usr/local/nginx/html/selfdev_can_sale/storage/responses/coupon/batch-list.json
 cp /usr/local/nginx/html/sale/storage/responses/coupon/coupon-activity-list.json /usr/local/nginx/html/selfdev_can_sale/storage/responses/coupon/coupon-activity-list.json
 cp /usr/local/nginx/html/sale/storage/responses/coupon/coupon-activity-user-list.json /usr/local/nginx/html/selfdev_can_sale/storage/responses/coupon/coupon-activity-user-list.json
-cp /usr/local/nginx/html/sale/ /usr/local/nginx/html/selfdev_can_sale/
-cp /usr/local/nginx/html/sale/app/Http/Controllers/Lptapp/AdminMiniOrderController.php /usr/local/nginx/html/selfdev_can_sale/app/Http/Controllers/Lptapp/AdminMiniOrderController.php
+cp /usr/local/nginx/html/sale/app/Http/Controllers/Lptapp/AdminMiniCourseController.php /usr/local/nginx/html/selfdev_can_sale/app/Http/Controllers/Lptapp/AdminMiniCourseController.php

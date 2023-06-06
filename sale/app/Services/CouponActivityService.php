@@ -182,4 +182,15 @@ class CouponActivityService
         unset($result['msg']);
         return $result;
     }
+
+    public function formatBatchStatus($batch)
+    {
+        if (in_array($batch['status'], [3, 4])) {
+            return $batch['status'];
+        }
+        if ($batch['send_num'] >= $batch['total_num'] || (!empty($batch->end_at) && $batch->end_at <= date('Y-m-d H:i:s'))) {
+            return 4;
+        }
+        return $batch['status'];
+    }
 }
