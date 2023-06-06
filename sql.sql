@@ -1,3 +1,17 @@
+
+CREATE TABLE `el_dk_huati_category` (
+      `id` int(11) NOT NULL COMMENT '主键ID',
+      `huati_id` int(11) NOT NULL DEFAULT '0' COMMENT '话题ID',
+      `sort_id` int(11) DEFAULT '10' COMMENT '排序ID',
+      `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+      `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='资料分类表' ROW_FORMAT=DYNAMIC;
+ALTER TABLE `el_dk_huati_category`
+  ADD PRIMARY KEY (`id`) USING BTREE;
+ALTER TABLE `el_dk_huati_category`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键ID';
+
+
 SELECT * FROM `el_mini_evaluation_pool` WHERE `evaluation` IN (
 '上完课才回来评价，一直想把字写好，也买过很多字帖临摹（就是那种一层薄纸的字帖），但是自己写的时候又回到了老样子。同事推荐的，抱着试一试的想法购买了课程。老师讲解清楚，已经坚持了一个月，每天练一页已经成为了一种习惯。';
 '我报了这个班，觉得真是捡到宝了。老师讲课很细致，特别是会提醒写字时容易犯的错误，这对新手真是太友好了，而且不光教授正确的写法，还会说明为什么要这么写，讲的很透彻。另外，老师还会介绍结构和笔画的规律，怎么写才规范、讲究。不仅仅是照着字帖，也会教其它的写法。现在才跟了一个月，就感觉收获特别大';
