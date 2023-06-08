@@ -3,4 +3,4 @@ cp /usr/local/nginx/html/selfdev_liupin//apps/dakaprogram/Lib/Action/AdminHuatiA
 mkdir /usr/local/nginx/html/old.liupinshuyuan.com//apps/dakaprogram/_static/js;
 cp /usr/local/nginx/html/selfdev_liupin//apps/dakaprogram/_static/js/admin_ziliao.js /usr/local/nginx/html/old.liupinshuyuan.com//apps/dakaprogram/_static/js/admin_ziliao.js
 mkdir /usr/local/nginx/html/old.liupinshuyuan.com//apps/dakaprogram/Tpl/default/AdminHuati;
-cp /usr/local/nginx/html/selfdev_liupin//apps/dakaprogram/Tpl/default/AdminHuati/addHuatiCategoryHtml.html /usr/local/nginx/html/old.liupinshuyuan.com//apps/dakaprogram/Tpl/default/AdminHuati/addHuatiCategoryHtml.html
+cp /usr/local/nginx/html/selfdev_liupin//apps/dakaprogram/Tpl/default/AdminHuati/saveHuatiCategoryHtml.html /usr/local/nginx/html/old.liupinshuyuan.com//apps/dakaprogram/Tpl/default/AdminHuati/saveHuatiCategoryHtml.html

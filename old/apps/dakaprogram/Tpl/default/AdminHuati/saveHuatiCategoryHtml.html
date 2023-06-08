@@ -1,0 +1,67 @@
+<style type="text/css">
+    .content {margin: 10px;}
+    .pop-area .l{width:120px;}
+    .pop-area .r{margin:0;}
+    .pop-area .r span{padding:5px 10px;background-color: #2E4C8C;color:#FFF;margin-right:10px;cursor: pointer;}
+
+</style>
+
+<dl class="pop-area">
+    <div class="mb10" style="overflow:hidden;*zoom:1;">
+        <div class="content">
+            <div class="l" ><span style="color:red">*</span> 分类标题：</div>
+            <div class="r"><input type="text" id="title" name="title" maxlength="12" class="s-txt" value="{$title}" style="width:245px;"></div>
+            <span style="color:red;">限5个字符</span>
+        </div>
+    </dt>
+    <dd>
+        <input type="hidden" id="huati_id" value="{$huati_id}" class="s-txt" style="width:245px;">
+        <input type="hidden" id="id" value="{$id}" class="s-txt" style="width:245px;">
+        <input type="button" class="btn_b" onclick="saveCategory()" value="确定" />
+        <input type="button" class="btn_w ml10" onclick="ui.box.close()" value="取消" />
+    </dd>
+    <div class="clear"></div>
+</dl>
+
+<script type="text/javascript">
+
+
+    function isEmpty(obj){
+        if(typeof obj == "undefined" || obj == null || obj == ""){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+
+    saveCategory = function() {
+
+        //获取所有group_id
+        var title = $('#title').val();
+        if (isEmpty(title)){
+            ui.error('请输入分类标题！');
+            return false;
+        }
+
+        var huati_id = $.trim($('#huati_id').val());
+        var id = $.trim($('#id').val());
+        var data = {'title':title, 'huati_id': huati_id, 'id':id};
+        // 提交添加
+        $.post(U('dakaprogram/AdminHuati/saveHuatiCategory'), data, function(msg) {
+            if(msg.status == 1) {
+                ui.box.close();
+                ui.success(msg.info, {
+                    end: function() {
+                        location.href = location.href;
+                    }
+                });
+
+            } else {
+                ui.error(msg.info);
+                return false;
+            }
+        }, 'json');
+    };
+
+</script>

@@ -1,0 +1,70 @@
+<style type="text/css">
+    .content {margin: 10px;}
+    .pop-area .l{width:120px;}
+    .pop-area .r{margin:0;}
+    .pop-area .r span{padding:5px 10px;background-color: #2E4C8C;color:#FFF;margin-right:10px;cursor: pointer;}
+
+</style>
+
+<dl class="pop-area">
+    <div class="mb10" style="overflow:hidden;*zoom:1;">
+        <div class="content">
+            <div class="l" ><span style="color:red">*</span>设置分类：</div>
+            <div class="r">
+      <select name="huati_category" id="huati_category" style="width:245px;">
+        <option value="0" <php>if($currentCategory == 0){ echo 'selected="selected"';}</php> >无分类</option>
+        <volist name='categories' id='pData'>
+        <option value="{$pData.id}" <php>if($currentCategory == $pData['id']){ echo 'selected="selected"';}</php> >{$pData.title}</option>
+        </volist>
+      </select>
+  </div>
+            <span style="color:red;">分类为空时，如分类区已开启，该资料将显示在“其他”中。</span>
+        </div>
+    </dt>
+    <dd>
+        <input type="hidden" id="album_id" value="{$album_id}" class="s-txt" style="width:245px;">
+        <input type="button" class="btn_b" onclick="setCategory()" value="确定" />
+        <input type="button" class="btn_w ml10" onclick="ui.box.close()" value="取消" />
+    </dd>
+    <div class="clear"></div>
+</dl>
+
+<script type="text/javascript">
+
+
+    function isEmpty(obj){
+        if(typeof obj == "undefined" || obj == null || obj == ""){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+
+    setCategory = function() {
+        var huati_category = $('#huati_category').val();
+        /*if (isEmpty(huati_category)){
+            ui.error('请选择分类！');
+            return false;
+        }*/
+
+        var album_id = $.trim($('#album_id').val());
+        var data = {'huati_category':huati_category, 'album_id': album_id};
+        // 提交添加
+        $.post(U('dakaprogram/AdminHuati/setHuatiCategory'), data, function(msg) {
+            if(msg.status == 1) {
+                ui.box.close();
+                ui.success(msg.info, {
+                    end: function() {
+                        location.href = location.href;
+                    }
+                });
+
+            } else {
+                ui.error(msg.info);
+                return false;
+            }
+        }, 'json');
+    };
+
+</script>
