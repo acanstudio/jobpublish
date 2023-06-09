@@ -1187,6 +1187,7 @@ class AdminHuatiAction extends AdministratorAction
             'huati_category' => $huatiCategory,
         ];
         $r = M('dk_huati_album')->save($uData);
+        $sql = "UPDATE `el_dk_huati_category` AS `hc`, (SELECT `huati_category`, COUNT(*) AS `count` FROM `el_dk_huati_album` WHERE `huati_category` > 0 GROUP BY `huati_category`) AS `ha` SET `hc`.`album_num` = `ha`.`count` WHERE `hc`.`id` = `ha`.`huati_category`;";
         exit(json_encode(['status' => 1, 'info' => '设置成功']));
     }
 
@@ -1264,6 +1265,7 @@ class AdminHuatiAction extends AdministratorAction
             exit(json_encode(['status' => 0, 'info' => '信息不存在']));
         }
 
+        M('dk_huati_album')->where(['huati_category' => $info['id']])->save(['huati_category' => 0]);
 		$r = M('dk_huati_category')->where($where)->delete();
         exit(json_encode(['status' => 1, 'info' => '删除成功']));
     }

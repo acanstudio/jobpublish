@@ -43,13 +43,38 @@ class HuatiV283Action extends ApiTokenAction
             $rs['if_follow'] = 0;
         }
         $rs['ziliaolist']      = $this->ziliaolist($id, $mid);
-        $rs['marketdata']      = $this->marketdata($id, $mid);
+        $rs['marketdata']      = $this->marketdatanew($id, $mid);
+        //$rs['marketdata']      = $this->marketdata($id, $mid);
         $rs['have_phone']      = $this->havePhone($mid);
         $rs['jieshao_pic_url'] =  M('dk_cock')->where(['code' => 'huati_pd_url'])->getField('data') ?: "";
         $result['data']        = $rs;
         $result['info']        = "查询成功";
         $result['status']      = 1;
         $this->ajaxreturn($result['data'], $result['info'], $result['status']);
+    }
+
+    protected function marketdatanew($id)
+    {
+        $infos = M('dk_huati_box')->where(['huati_id' => $id, 'is_publish' => 1])->order('location asc, sort_id desc, id asc')->select();
+        if (empty($infos) || count($infos) < 3) {
+            return ['is_show' => 0];
+        }
+        
+        $results = [];
+        $positions = [1 => 'left', 2 => 'right'];
+        foreach ($infos as $info) {
+            $position = $positions[$info['location']];
+            $results[$position][] = [
+                'covarurl' => getImageUrlByAttachId($info['cover']),
+                'type' => $info['type'],
+                'jump_url' => $info['jump_url'],
+            ];
+        }
+        if (count($results) != 2 || count($results['right']) != 2) {
+            return ['is_show' => 0];
+        }
+        $results['is_show'] = 1;
+        return $results;
     }
 
     public function marketdata($id = 0)
