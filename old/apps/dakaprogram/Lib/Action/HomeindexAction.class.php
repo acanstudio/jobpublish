@@ -460,15 +460,41 @@ class HomeindexAction extends ApiTokenAction
     protected function formatMyCourse($myCourse)
     {
         return [
-            'code' => 'regular',
-            'name' => '楷书精品课',
-            'courseInfo' => [
-                'lastStudy' => '怎么成为书法家',
-                'courseId' => 1,
-                'courseName' => '李六军硬笔楷书课',
-                'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/%E5%B0%81%E9%9D%A2.png',
-                'videoUrl' => 'https://1254153797.vod2.myqcloud.com/41f91735vodsh1254153797/333a6113243791581806610575/Yag6fsAESaIA.mp4',
-                'fileid' => '3270835009025764900',
+            [
+                'code' => 'regular',
+                'name' => '楷书精品课',
+                'haveCourse' => 1,
+                'courseInfo' => [
+                    'lastStudy' => '怎么成为书法家',
+                    'courseId' => 1,
+                    'courseName' => '李六军硬笔楷书课',
+                    'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/%E5%B0%81%E9%9D%A2.png',
+                    'fileid' => '3701925922487090500',
+                ],
+            ],
+            [
+                'code' => 'regular',
+                'name' => '楷书精品课',
+                'haveCourse' => rand(0, 1),
+                'courseInfo' => [
+                    'lastStudy' => '行楷永相伴',
+                    'courseId' => 1,
+                    'courseName' => '李六军行楷课',
+                    'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/%E5%B0%81%E9%9D%A2.png',
+                    'fileid' => '3701925922487090500',
+                ],
+            ],
+            [
+                'code' => 'regular',
+                'name' => '行书精品课',
+                'haveCourse' => rand(0, 1),
+                'courseInfo' => [
+                    'lastStudy' => '行书是怎么炼成测',
+                    'courseId' => 1,
+                    'courseName' => '李六军行书课',
+                    'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/%E5%B0%81%E9%9D%A2.png',
+                    'fileid' => '3701925922487090500',
+                ],
             ],
         ];
     }
@@ -479,34 +505,37 @@ class HomeindexAction extends ApiTokenAction
             [
                 'code' => 'regular',
                 'name' => '楷书精品课',
+                'haveCourse' => rand(0, 1),
+                'playingMode' => ['replay', 'stop'][rand(0, 1)],
                 'courseInfo' => [
                     'courseId' => 1,
                     'courseName' => '李六军硬笔楷书课',
                     'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/%E5%B0%81%E9%9D%A2.png',
-                    'videoUrl' => 'https://1254153797.vod2.myqcloud.com/41f91735vodsh1254153797/333a6113243791581806610575/Yag6fsAESaIA.mp4',
-                    'fileid' => '3270835009025764900',
+                    'fileid' => '3701925922487090500',
                 ],
             ],
             [
                 'code' => 'runningRegular',
                 'name' => '行楷精品课',
+                'haveCourse' => rand(0, 1),
+                'playingMode' => ['replay', 'stop'][rand(0, 1)],
                 'courseInfo' => [
                     'courseId' => 1,
                     'courseName' => '李六军硬笔行楷课',
                     'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/56.jpg',
-                    'videoUrl' => 'https://1254153797.vod2.myqcloud.com/41f91735vodsh1254153797/333a6113243791581806610575/Yag6fsAESaIA.mp4',
-                    'fileid' => '3270835009025764900',
+                    'fileid' => '3701925922487090500',
                 ],
             ],
             [
                 'code' => 'cursive',
                 'name' => '行书精品课',
+                'haveCourse' => rand(0, 1),
+                'playingMode' => ['replay', 'stop'][rand(0, 1)],
                 'courseInfo' => [
                     'courseId' => 1,
                     'courseName' => '李六军硬笔行书课',
                     'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/%E5%B0%81%E9%9D%A2.png',
-                    'videoUrl' => 'https://1254153797.vod2.myqcloud.com/41f91735vodsh1254153797/333a6113243791581806610575/Yag6fsAESaIA.mp4',
-                    'fileid' => '3270835009025764900',
+                    'fileid' => '3701925922487090500',
                 ],
             ],
         ];

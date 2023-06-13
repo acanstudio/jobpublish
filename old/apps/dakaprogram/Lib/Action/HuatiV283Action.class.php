@@ -57,7 +57,7 @@ class HuatiV283Action extends ApiTokenAction
     {
         $infos = M('dk_huati_box')->where(['huati_id' => $id, 'is_publish' => 1])->order('location asc, sort_id desc, id asc')->select();
         if (empty($infos) || count($infos) < 3) {
-            return ['is_show' => 0];
+            return ['is_show' => 0, 'is_display' => 0];
         }
         
         $results = [];
@@ -65,15 +65,16 @@ class HuatiV283Action extends ApiTokenAction
         foreach ($infos as $info) {
             $position = $positions[$info['location']];
             $results[$position][] = [
-                'covarurl' => getImageUrlByAttachId($info['cover']),
+                'coverurl' => getImageUrlByAttachId($info['cover']),
                 'type' => $info['type'],
                 'jump_url' => $info['jump_url'],
             ];
         }
         if (count($results) != 2 || count($results['right']) != 2) {
-            return ['is_show' => 0];
+            return ['is_show' => 0, 'is_display' => 0];
         }
-        $results['is_show'] = 1;
+        $results['is_show'] = 0;
+        $results['is_display'] = 1;
         return $results;
     }
 
