@@ -22,7 +22,7 @@ class HuatiAlbumAction extends ApiTokenAction
     {
         $mid      = intval($_REQUEST['mid']);
         $huati_id = intval($_REQUEST['huati_id']);
-        $huati_category = intval($_REQUEST['huati_category']);
+        $huati_category = $_REQUEST['huati_category'];
         $keyword  = $_REQUEST['keyword'];
         $type     = $_REQUEST['type'];
         // $huati_id         = 88;
