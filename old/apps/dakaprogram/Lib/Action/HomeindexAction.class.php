@@ -432,112 +432,75 @@ class HomeindexAction extends ApiTokenAction
     {
         $mid = intval($_REQUEST['mid']);
         $myCourse = false;
-        if (!empty($mid)) {
-            $myCourse = M('mini_course_user')->where(['uid' => $mid])->find();
-        }
-
-        if (false) {//empty($myCourse)) {
-            $result = [
-                'status' => 1,
-                'info' => 'ok',
-                'data' => ['infos' => $this->defaultRecommendCourses()],
-            ];
-            echo json_encode($result);exit;
-        }
+        $datas = $this->pointRecommendCourses($mid);
         $result = [
             'status' => 1,
             'info' => 'ok',
-            'data' => [
-                'tabType' => ['my', ''][rand(0, 1)],
-                'myCourse' => $this->formatMyCourse($myCourse),
-                'infos' => $this->defaultRecommendCourses()
-            ],
+            'data' => ['infos' => array_merge($datas['myCourses'], $datas['infos'], $datas['noCourses'])],
         ];
         echo json_encode($result);exit;
-
     }
 
-    protected function formatMyCourse($myCourse)
+    /**
+     * 获取首页课程标签信息，标签课程信息保持在dk_cock配置数据表
+     */
+    protected function pointRecommendCourses($mid)
     {
-        return [
-            [
-                'code' => 'regular',
-                'name' => '楷书精品课',
-                'haveCourse' => 1,
-                'courseInfo' => [
-                    'lastStudy' => '怎么成为书法家',
-                    'courseId' => 1,
-                    'courseName' => '李六军硬笔楷书课',
-                    'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/%E5%B0%81%E9%9D%A2.png',
-                    'fileid' => '3701925922487090500',
-                ],
-            ],
-            [
-                'code' => 'regular',
-                'name' => '楷书精品课',
-                'haveCourse' => rand(0, 1),
-                'courseInfo' => [
-                    'lastStudy' => '行楷永相伴',
-                    'courseId' => 1,
-                    'courseName' => '李六军行楷课',
-                    'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/%E5%B0%81%E9%9D%A2.png',
-                    'fileid' => '3701925922487090500',
-                ],
-            ],
-            [
-                'code' => 'regular',
-                'name' => '行书精品课',
-                'haveCourse' => rand(0, 1),
-                'courseInfo' => [
-                    'lastStudy' => '行书是怎么炼成测',
-                    'courseId' => 1,
-                    'courseName' => '李六军行书课',
-                    'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/%E5%B0%81%E9%9D%A2.png',
-                    'fileid' => '3701925922487090500',
-                ],
-            ],
-        ];
-    }
+        $courseTypes = ['regular' => '楷书精品课', 'runningRegular' => '行楷精品课', 'cursive' => '行书精品课'];
+        $infos = $noCourses = $myCourses = [];
+        foreach ($courseTypes as $type => $tName) {
+            $info = M('dk_cock')->where(['code' => "home_{$type}"])->find();
+            $cData = [
+                'code' => $type,
+                'name' => $tName,
+                'myCourse' => 0,
+            ];
+            if (empty($info)) {
+                $cData['haveCourse'] = 0;
+                $noCourses[] = $cData;
+                continue;
+            }
+            list($courseId, $playingMode, $fileid, $coverUrl) = explode('|', $info['data']);
+            if (empty($courseId)) {
+                $cData['haveCourse'] = 0;
+                $noCourses[] = $cData;
+                continue;
+            }
+            $course = M('mini_course')->where(['id' => $courseId])->find();
+            if (empty($courseId)) {
+                $cData['haveCourse'] = 0;
+                $noCourses[] = $cData;
+                continue;
+            }
+            $cData['haveCourse'] = 1;
 
-    protected function defaultRecommendCourses()
-    {
-        return [
-            [
-                'code' => 'regular',
-                'name' => '楷书精品课',
-                'haveCourse' => rand(0, 1),
-                'playingMode' => ['replay', 'stop'][rand(0, 1)],
-                'courseInfo' => [
-                    'courseId' => 1,
-                    'courseName' => '李六军硬笔楷书课',
-                    'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/%E5%B0%81%E9%9D%A2.png',
-                    'fileid' => '3701925922487090500',
-                ],
-            ],
-            [
-                'code' => 'runningRegular',
-                'name' => '行楷精品课',
-                'haveCourse' => rand(0, 1),
-                'playingMode' => ['replay', 'stop'][rand(0, 1)],
-                'courseInfo' => [
-                    'courseId' => 1,
-                    'courseName' => '李六军硬笔行楷课',
-                    'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/56.jpg',
-                    'fileid' => '3701925922487090500',
-                ],
-            ],
-            [
-                'code' => 'cursive',
-                'name' => '行书精品课',
-                'haveCourse' => rand(0, 1),
-                'playingMode' => ['replay', 'stop'][rand(0, 1)],
-                'courseInfo' => [
-                    'courseId' => 1,
-                    'courseName' => '李六军硬笔行书课',
-                    'coverUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/asset/pc/2023/04/27/%E5%B0%81%E9%9D%A2.png',
-                    'fileid' => '3701925922487090500',
-                ],
-            ],
-        ];
+            $cData['playingMode'] = in_array($playingMode, ['replay', 'stop']) ? $playingMode : 'stop';
+            $cData['courseInfo'] = [
+                'courseId' => $courseId,
+                'courseName' => $course['course_title'],
+                'coverUrl' => strval($coverUrl),
+                'fileid' => strval($fileid),
+            ];
+            // 判断并标识我的课程
+            $myWhere = ['course_id' => $courseId, 'uid' => $mid];
+            $myCourseMark = 0;
+            $myCourse = M('mini_course_user')->where($myWhere)->find();
+            if ($myCourse) {
+                $lastSectionId = M('mini_course_history')->where($myWhere)->order('updated_at desc')->getField('section_id');
+                $section = $lastSectionId ? M('mini_course_section')->where(['id' => $lastSectionId])->find() : false;
+                $section = empty($section) ? M('mini_course_section')->where("course_id = {$courseId} AND is_del = 0")->order('sort_id asc')->find() : $section;
+                if (!empty($section)) {
+                    $myCourseMark = 1;
+                    $cData['myCourse'] = $myCourseMark;
+                    $cData['courseInfo']['lastStudy'] = '最近学到：' . $section['title'];
+                    $myCourses[] = $cData;
+                }
+            }
+            if (empty($myCourseMark)) {
+                $infos[] = $cData;
+            }
+        }
+
+        return ['noCourses' => $noCourses, 'infos' => $infos, 'myCourses' => $myCourses];
     }
 }

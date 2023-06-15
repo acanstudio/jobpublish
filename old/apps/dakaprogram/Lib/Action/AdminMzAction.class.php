@@ -19,7 +19,7 @@ class AdminMzAction extends AdministratorAction
 
         $r1                 = M('dk_huati_box')->where(['huati_id' => $id, 'location' => 2, 'is_publish' => 1])->count();
         $r2                 = M('dk_huati_box')->where(['huati_id' => $id, 'location' => 1, 'is_publish' => 1])->count();
-        $title              = $r1 * $r2 > 0 ? "<font color=white>banner正常展示中</font>" : "<font color=white><b>左推广位”或全部“右轮播位”状态均为已禁用，不予展示banne</b>r</font>";
+        $title              = $r1 >= 2 && $r2 >= 1 ? "<font color=white>banner正常展示中</font>" : "<font color=white><b>全部左轮播位”禁用或“右推广位”未全部启用，不予展示banne</b>r</font>";
         $this->pageButton[] = array(
             'title'   => $title,
             'onclick' => "window.location.href='#'",
@@ -57,7 +57,7 @@ class AdminMzAction extends AdministratorAction
             $homeWorkInfo['data'][$k]['id']         = $v['id'];
             $homeWorkInfo['data'][$k]['title']      = $v['title'];
             $homeWorkInfo['data'][$k]['coverurl']   = "<img src='" . getImageUrlByAttachId($v['cover']) . "' height='60' alt='' />";
-            $homeWorkInfo['data'][$k]['sort_id']    = "<input type='text' id='sortid_$v[id]' onBlur='editThisSort($v[id],$v[sort_id])' value='$v[sort_id]' style='width:40px'";
+            $homeWorkInfo['data'][$k]['sort_id']    = $v['location'] == 1 ? "<input type='text' id='sortid_$v[id]' onBlur='editThisSort($v[id],$v[sort_id])' value='$v[sort_id]' style='width:40px'" : '';
             $homeWorkInfo['data'][$k]['is_publish'] = $v['is_publish'] == 0 ? '<font color="red">OFF</font>' : '<font color="green">ON</font>';
             $homeWorkInfo['data'][$k]['switch']     = $v['is_publish'] == 1 ? '禁用' : '开启';
             $homeWorkInfo['data'][$k]['DOACTION']   = '<a href="' . U('dakaprogram/AdminMz/editHuatiBannerBox', array(

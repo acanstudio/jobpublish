@@ -72,23 +72,25 @@ class HuatiAlbumAction extends ApiTokenAction
             $data['ptype'] = 2;
         }
 
-        $huatiCategories = M('dk_huati_category')->where("huati_id = {$huati_id} AND `album_num` > 0")->order('sort_id asc')->select();
-        $categories = [];
-        foreach ($huatiCategories as $hCategory) {
-            if (is_null($huatiCategory)) {
-                $huatiCategory = $hCategory['id'];
-            }
-            $categories[] = ['id' => $hCategory['id'], 'title' => $hCategory['title']];
-        }
-        $noCategoryCount = M('dk_huati_album')->where("huati_id = {$huati_id} AND `huati_category` = 0")->count();
-        if ($noCategoryCount && count($categories) > 0) {
-            $categories[] = ['id' => 0, 'title' => '其他'];
-        }
-
         if (isset($huatiCategory) && $withCategory) {
             $data['huati_category'] = intval($huatiCategory);
         }
         $rs = M('dk_huati_album')->where($data)->order('sort_id asc,id asc')->select();
+
+        $categories = [];
+        if (!empty($rs)) {
+            $huatiCategories = M('dk_huati_category')->where("huati_id = {$huati_id} AND `album_num` > 0")->order('sort_id desc')->select();
+            foreach ($huatiCategories as $hCategory) {
+                if (is_null($huatiCategory)) {
+                    $huatiCategory = $hCategory['id'];
+                }
+                $categories[] = ['id' => $hCategory['id'], 'title' => $hCategory['title']];
+            }
+            $noCategoryCount = M('dk_huati_album')->where("huati_id = {$huati_id} AND `huati_category` = 0")->count();
+            if ($noCategoryCount && count($categories) > 0) {
+                $categories[] = ['id' => 0, 'title' => '其他'];
+            }
+        }
 
         //$lastRead = $this->lastRead($huati_id, $mid);
         foreach ($rs as $key => &$value) {
@@ -384,55 +386,5 @@ class HuatiAlbumAction extends ApiTokenAction
     public function albumField($id = 0, $str = 'id')
     {
         return M('dk_album')->where(['id' => $id])->getField($str);
-    }
-
-    /**
-     * 按分类显示话题资料
-     */
-    public function listinfo()
-    {
-        $mid      = intval($_REQUEST['mid']);
-        $huatiId = intval($_REQUEST['huati_id']);
-        $keyword  = $_REQUEST['keyword'];
-        $type     = $_REQUEST['type'];
-        $huatiCategory     = $_REQUEST['huati_category'];
-        $huatiInfo = M('dk_huati')->where("id = {$huatiId} AND `album_num` > 0")->find();
-        $huatiCategories = M('dk_huati_category')->where(['huati_id' => $huatiId])->order('sort_id asc')->select();
-        $categories = [];
-        foreach ($huatiCategories as $hCategory) {
-            $categories[$hCategory['id']] = $hCategory['title'];
-        }
-
-        $data['a.huati_id'] = $huatiId;
-        $data['a.ptype']    = 1;
-        $data['a.is_del']   = 0;
-        if (!empty($huatiCategory)) {
-            $data['a.huati_category'] = $huatiCategory;
-        }
-        if ($type == 'lianziting') {
-            $data['a.ptype'] = 2;
-        }
-        $data['b.album_title'] = array('like', "%" . $keyword . "%");
-        $data['b.is_publish']  = 1;
-        $rs                    = M('dk_huati_album a')->field('a.id,a.huati_category,a.album_id,b.album_title,b.stype,b.is_publish')->join('el_dk_album as b on b.id=a.album_id')->where($data)->order('a.sort_id asc,a.id desc')->select();
-        $album_id              = $this->historyalbumId($mid, $huatiId);
-        foreach ($rs as $key => &$value) {
-
-            $rs[$key]['last_read']   = 0;
-            $rs[$key]['bofang_num']  = $this->bofangNum($value['album_id']);
-            $rs[$key]['section_num'] = $this->sectionNum($value['album_id']);
-            $rs[$key]['last_read']   = ($value['album_id'] == $album_id) ? 1 : 0;
-
-        }
-        $kf_pic           = getImageUrlByAttachId($huaitiInfo['kf_pic']);
-        //print_r($rs);exit();
-        $result['data'] = [
-            'kf_pic' => $kf_pic,
-            'categories' => $categories,
-            'infos' => $rs,
-        ];
-        $result['info']   = 'ok';
-        $result['status'] = 1;
-        $this->ajaxreturn($result['data'], $result['info'], $result['status']);
     }
 }
