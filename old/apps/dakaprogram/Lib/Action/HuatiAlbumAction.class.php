@@ -57,8 +57,13 @@ class HuatiAlbumAction extends ApiTokenAction
     }
     public function datalist()
     {
-        $mid      = intval($_REQUEST['mid']);
         $huati_id = intval($_REQUEST['huati_id']);
+        $preSql = "UPDATE `el_dk_huati_category` SET `album_num` = 0 WHERE `huati_id` = {$huati_id};";
+        M()->query($preSql);
+        $preSql = "UPDATE `el_dk_huati_category` AS `hc`, (SELECT `ha`.`huati_category`, COUNT(*) AS `count` FROM `el_dk_huati_album` as `ha`, `el_dk_album` AS `a` WHERE `ha`.`huati_id` = {$huati_id} AND `ha`.`huati_category` > 0 AND `a`.`id` = `ha`.`album_id` AND `a`.`is_publish` = 1 GROUP BY `ha`.`huati_category`) AS `huaa` SET `hc`.`album_num` = `huaa`.`count` WHERE `hc`.`id` = `huaa`.`huati_category`;";
+        M()->query($preSql);
+
+        $mid      = intval($_REQUEST['mid']);
         $withCategory = intval($_REQUEST['with_category']);
         $huatiCategory     = $_REQUEST['huati_category'];
         //var_dump($huatiCategory);
@@ -72,13 +77,8 @@ class HuatiAlbumAction extends ApiTokenAction
             $data['ptype'] = 2;
         }
 
-        if (isset($huatiCategory) && $withCategory) {
-            $data['huati_category'] = intval($huatiCategory);
-        }
-        $rs = M('dk_huati_album')->where($data)->order('sort_id asc,id asc')->select();
-
         $categories = [];
-        if (!empty($rs)) {
+        if ($type != 'lianziting') {
             $huatiCategories = M('dk_huati_category')->where("huati_id = {$huati_id} AND `album_num` > 0")->order('sort_id desc')->select();
             foreach ($huatiCategories as $hCategory) {
                 if (is_null($huatiCategory)) {
@@ -90,7 +90,15 @@ class HuatiAlbumAction extends ApiTokenAction
             if ($noCategoryCount && count($categories) > 0) {
                 $categories[] = ['id' => 0, 'title' => '其他'];
             }
+    
+            if (isset($huatiCategory) && $withCategory) {
+                $data['huati_category'] = intval($huatiCategory);
+            }
         }
+        $rs = M('dk_huati_album')->where($data)->order('sort_id asc,id asc')->select();
+        $log_file = "./data/upload/dakaprogram/logs/" . date('Y-m-d-H').'.txt';
+        $lStr = "\r\n ---album-list data --- \r\n" . M()->getLastSql() . "\r\n\r\n";
+        file_put_contents($log_file, $lStr, FILE_APPEND);
 
         //$lastRead = $this->lastRead($huati_id, $mid);
         foreach ($rs as $key => &$value) {
@@ -111,7 +119,7 @@ class HuatiAlbumAction extends ApiTokenAction
         // array_multisort(array_column($rs, 'sort_use'), SORT_DESC, $rs);
         $album_id = intval($rs[0]['album_id']);
 
-        $result['data']   = $withCategory ? ['categories' => $categories, 'infos' => $rs] : $rs;
+        $result['data']   = $withCategory ? ['categories' => $rs ? $categories : [], 'infos' => $rs] : $rs;
         $result['info']   = "查询成功";
         $result['status'] = 1;
         $this->ajaxreturn($result['data'], $result['info'], $result['status']);

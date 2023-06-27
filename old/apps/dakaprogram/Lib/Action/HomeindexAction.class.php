@@ -457,18 +457,21 @@ class HomeindexAction extends ApiTokenAction
             ];
             if (empty($info)) {
                 $cData['haveCourse'] = 0;
+                $cData['name'] = '';
                 $noCourses[] = $cData;
                 continue;
             }
             list($courseId, $playingMode, $fileid, $coverUrl) = explode('|', $info['data']);
             if (empty($courseId)) {
                 $cData['haveCourse'] = 0;
+                $cData['name'] = '';
                 $noCourses[] = $cData;
                 continue;
             }
             $course = M('mini_course')->where(['id' => $courseId])->find();
-            if (empty($courseId)) {
+            if (empty($courseId) || empty($course['is_publish'])) {
                 $cData['haveCourse'] = 0;
+                $cData['name'] = '';
                 $noCourses[] = $cData;
                 continue;
             }

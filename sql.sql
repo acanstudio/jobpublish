@@ -1,4 +1,22 @@
 
+CREATE TABLE `el_mini_dict_record` (
+      `id` int(11) NOT NULL,
+      `uid` int(11) NOT NULL DEFAULT '0' COMMENT '用户UID',
+      `word_id` int(11) NOT NULL DEFAULT '0' COMMENT '单字ID',
+      `word_type` varchar(30) DEFAULT '' COMMENT '单字类型',
+      `calligraphy` varchar(30) DEFAULT '' COMMENT '书体',
+      `view_num` smallint(5) DEFAULT '0' COMMENT '浏览数',
+      `status` int(11) DEFAULT '0' COMMENT '状态',
+      `created_at` timestamp NULL DEFAULT NULL COMMENT '创建时间',
+      `updated_at` timestamp NULL DEFAULT NULL COMMENT '更新日期'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户同步单字';
+ALTER TABLE `el_mini_dict_record`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user` (`uid`) USING BTREE;
+ALTER TABLE `el_mini_dict_record`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+
 CREATE TABLE `el_dk_huati_category` (
       `id` int(11) NOT NULL COMMENT '主键ID',
       `huati_id` int(11) NOT NULL DEFAULT '0' COMMENT '话题ID',
