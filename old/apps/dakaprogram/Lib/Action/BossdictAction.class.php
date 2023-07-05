@@ -12,6 +12,41 @@ use App\dakaprogram\Lib\Model\BossdictModel;
 class BossdictAction
 {
     /**
+     * 返回小程序字典初始化信息
+     *
+     */
+    public function dictBaseinfo()
+    {
+        $model = $this->getBossdictModel();
+        $data = $model->getDemoData();
+        $result = [
+            'status' => 1,
+            'info' => 'success',
+            'data' => $data,
+        ];
+        echo json_encode($result);exit;
+    }
+
+    /**
+     * 返回小程序字典分享信息
+     *
+     */
+    public function dictShare()
+    {
+        $result = [
+            'status' => 1,
+            'info' => 'success',
+            'data' => [
+                'title' => '查字词，看示范',
+                //'path' => 'path: `/coursePkg/main/main?id=${that.data.courseId}&channel=share`',
+                //'desc' => '你随身所带的书法字典',
+                'imageUrl' => 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/courseware/pc/2023/07/05/rtkgz93ljb.png',
+            ],
+        ];
+        echo json_encode($result);exit;
+    }
+
+    /**
      * 查字词
      *
      */
@@ -48,7 +83,8 @@ class BossdictAction
         if (empty($type)) {
             $type = $model->getLastType($uid);
         }
-        $infos = $model->getPartDictInfos($type);
+        $force = intval($_REQUEST['force']);
+        $infos = $model->getPartDictInfos($type, $force);
         //print_r($infos);
 
         $calligraphy = strval($_REQUEST['calligraphy']);
@@ -68,7 +104,7 @@ class BossdictAction
      */
     public function resourceLack()
     {
-        $auth = $this->checkAuth();
+        $auth = $this->checkAuth(false);
         $model = $this->getBossdictModel();
         $user = $this->getUserInfo();
         $words = strval($_REQUEST['words']);
@@ -76,7 +112,8 @@ class BossdictAction
             echo json_encode(['status' => 0, 'info' => '参数有误', 'data' => '']);exit();
         }
 
-        //$model->recordLackResource($user, $words);
+        $uid = $user ? $user['uid'] : 0;
+        $model->recordLackResource($uid, $words);
         $result = [
             'status' => 1,
             'info' => 'success',
@@ -101,7 +138,8 @@ class BossdictAction
             echo json_encode(['status' => 0, 'info' => '参数有误', 'data' => '']);exit();
         }
 
-        //$model->createPartRecord($user, $wordId, $type, $calligraphy);
+        $uid = $user ? $user['uid'] : 0;
+        $model->createPartRecord($uid, $wordId, $type, $calligraphy);
         $result = [
             'status' => 1,
             'info' => 'success',

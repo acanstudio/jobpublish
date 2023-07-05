@@ -1,3 +1,16 @@
+UPDATE  `el_mini_course` SET `market_info` = '限时优惠，福利大放送' WHERE `id` = 1;
+
+INSERT INTO `el_dk_cock` (`id`, `data`, `remark`, `code`, `ext_data`) VALUES (NULL, 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/miniprogramImg/guideImg-min.png', '字典-示例', 'dict-demo', NULL);
+
+INSERT INTO `el_dk_cock` (`id`, `data`, `remark`, `code`, `ext_data`) VALUES (NULL, 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/courseware/pc/2023/07/05/g6qcoqlop8.png|/pages/courseMarketing/courseMarketing?id=112&channel=dictpianpangkaishu', '字典-部首-楷书', 'dict-component-bossdict', NULL);
+INSERT INTO `el_dk_cock` (`id`, `data`, `remark`, `code`, `ext_data`) VALUES (NULL, 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/courseware/pc/2023/07/05/g6qcoqlop8.png|/pages/courseMarketing/courseMarketing?id=112&channel=dictkongbikaishu', '字典-控笔-楷书', 'dict-penControl-bossdict', NULL);
+INSERT INTO `el_dk_cock` (`id`, `data`, `remark`, `code`, `ext_data`) VALUES (NULL, 'https://xsjy-1254153797.cos.ap-shanghai.myqcloud.com/edu/courseware/pc/2023/07/05/g6qcoqlop8.png|/pages/courseMarketing/courseMarketing?id=112&channel=dictbihuakaishu', '字典-笔画-楷书', 'dict-stroke-bossdict', NULL);
+
+
+
+UPDATE `el_sp_word_calligraphy` SET `category` = 'bossCursive' WHERE `word_id` >= 2542 AND `word_id` <= 2628 AND `category` = 'standardgood';
+
+
 
 CREATE TABLE `el_mini_dict_record` (
       `id` int(11) NOT NULL,
@@ -14,6 +27,18 @@ ALTER TABLE `el_mini_dict_record`
   ADD PRIMARY KEY (`id`),
   ADD KEY `user` (`uid`) USING BTREE;
 ALTER TABLE `el_mini_dict_record`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+CREATE TABLE `el_mini_dict_lack` (
+      `id` int(11) NOT NULL,
+      `uid` int(11) NOT NULL DEFAULT '0' COMMENT '用户UID',
+      `word` varchar(30) DEFAULT '' COMMENT '单字类型',
+      `created_at` timestamp NULL DEFAULT NULL COMMENT '创建时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资源缺失字库';
+ALTER TABLE `el_mini_dict_lack`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user` (`uid`) USING BTREE;
+ALTER TABLE `el_mini_dict_lack`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 

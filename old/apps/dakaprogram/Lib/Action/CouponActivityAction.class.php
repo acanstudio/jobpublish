@@ -160,7 +160,7 @@ class CouponActivityAction
         $activity = $model->getPointTypeInfo($userType, $uid);
         $result = [
             'info' => 'success',
-            'data' => ['type' => $userType, 'iosbutton' => $iosbutton, 'activity' => $activity],
+            'data' => ['type' => $userType, 'iosbutton' => $iosbutton, 'jumpPath' => '/coursePkg/main/main?id=1&channel=share', 'activity' => $activity],
         ];
         echo json_encode($result);exit;
     }
