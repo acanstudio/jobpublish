@@ -46,7 +46,7 @@ class AdminHuatiAction extends AdministratorAction
             $homeWorkInfo['data'][$key]['DOACTION'] .= '<a href="' . U('dakaprogram/AdminHuati/editOne', array('tabHash' => 'editOne', 'id' => $value['id'])) . '">' . '编辑' . '</a> |';
             $homeWorkInfo['data'][$key]['DOACTION'] .= '<a href="' . U('dakaprogram/AdminHuati/riji', array('tabHash' => 'riji', 'id' => $value['id'])) . '">' . '打卡明细' . '</a> |';
             $homeWorkInfo['data'][$key]['DOACTION'] .= '<a href="' . U('dakaprogram/AdminMz/listHuatiBox', array('tabHash' => 'listHuatiBox', 'id' => $value['id'])) . '">' . 'Banner' . '</a> |';
-            $homeWorkInfo['data'][$key]['DOACTION'] .= '<a href="' . U('dakaprogram/AdminHuati/ziliao', array('tabHash' => 'riji', 'id' => $value['id'])) . '">' . '资料' . '</a> |';
+            $homeWorkInfo['data'][$key]['DOACTION'] .= '<a href="' . U('dakaprogram/AdminHuati/ziliao', array('tabHash' => 'ziliaolist', 'id' => $value['id'])) . '">' . '资料' . '</a> |';
             $homeWorkInfo['data'][$key]['DOACTION'] .= '<a href="' . U('dakaprogram/AdminHuati/yinyue', array('tabHash' => 'riji', 'id' => $value['id'])) . '">' . '音乐' . '</a> |';
             $infos = $value['status'] == 0 ? '显示' : '隐藏';
             //$homeWorkInfo['data'][$key]['DOACTION'] .= '<a href="javascript:void(0)" onclick="disableHuati(' . $value['id'] . ')">' . $infos . '</a> |';
@@ -111,13 +111,13 @@ class AdminHuatiAction extends AdministratorAction
     //首页@lee
     public function ziliao()
     {
-        $this->pageTab[] = ['title' => '话题列表', 'tabHash' => 'index', 'url' => "/index.php?app=dakaprogram&mod=AdminHuati&act=huatilist"];
-        $this->pageTab[] = ['title' => '添加话题', 'tabHash' => 'addOne', 'url' => "/index.php?app=dakaprogram&mod=AdminHuati&act=addOne"];
+        /*$this->pageTab[] = ['title' => '话题列表', 'tabHash' => 'index', 'url' => "/index.php?app=dakaprogram&mod=AdminHuati&act=huatilist"];
+        $this->pageTab[] = ['title' => '添加话题', 'tabHash' => 'addOne', 'url' => "/index.php?app=dakaprogram&mod=AdminHuati&act=addOne"];*/
 
-        $this->pageTab[] = ['title' => '资料列表', 'tabHash' => 'ziliaolist', 'url' => "/index.php?app=dakaprogram&mod=AdminHuati&act=ziliao"];
-        $this->pageTab[] = ['title' => '资料分类', 'tabHash' => 'categorylist', 'url' => "/index.php?app=dakaprogram&mod=AdminHuati&act=ziliaoCategory"];
-        //页面列表默认展示的表头参数
         $huati_id           = $map['huati_id']           = $_REQUEST['id'];
+        $this->pageTab[] = ['title' => '资料列表', 'tabHash' => 'ziliaolist', 'url' => "/index.php?app=dakaprogram&mod=AdminHuati&act=ziliao&id={$huati_id}"];
+        $this->pageTab[] = ['title' => '资料分类', 'tabHash' => 'categorylist', 'url' => "/index.php?app=dakaprogram&mod=AdminHuati&act=ziliaoCategory&id={$huati_id}"];
+        //页面列表默认展示的表头参数
         $this->pageButton[] = array('title' => '+添加', 'onclick' => "addZiliaoTreeCategory({$huati_id})");
 
         $this->allSelected = false;
@@ -1187,7 +1187,10 @@ class AdminHuatiAction extends AdministratorAction
             'huati_category' => $huatiCategory,
         ];
         $r = M('dk_huati_album')->save($uData);
+        $sql = "UPDATE `el_dk_huati_category` SET `album_num` = 0 ;";
+        M()->query($sql);
         $sql = "UPDATE `el_dk_huati_category` AS `hc`, (SELECT `huati_category`, COUNT(*) AS `count` FROM `el_dk_huati_album` WHERE `huati_category` > 0 GROUP BY `huati_category`) AS `ha` SET `hc`.`album_num` = `ha`.`count` WHERE `hc`.`id` = `ha`.`huati_category`;";
+        M()->query($sql);
         exit(json_encode(['status' => 1, 'info' => '设置成功']));
     }
 
@@ -1273,17 +1276,17 @@ class AdminHuatiAction extends AdministratorAction
     // 话题资料分类
     public function ziliaoCategory()
     {
-        $this->pageTab[] = ['title' => '资料列表', 'tabHash' => 'ziliaolist', 'url' => "/index.php?app=dakaprogram&mod=AdminHuati&act=ziliao"];
-        $this->pageTab[] = ['title' => '资料分类', 'tabHash' => 'categorylist', 'url' => "/index.php?app=dakaprogram&mod=AdminHuati&act=category"];
-        //页面列表默认展示的表头参数
         $huati_id           = $map['huati_id']           = $_REQUEST['id'];
+        $this->pageTab[] = ['title' => '资料列表', 'tabHash' => 'ziliaolist', 'url' => "/index.php?app=dakaprogram&mod=AdminHuati&act=ziliao&id={$huati_id}"];
+        $this->pageTab[] = ['title' => '资料分类', 'tabHash' => 'categorylist', 'url' => "/index.php?app=dakaprogram&mod=AdminHuati&act=ziliaoCategory&id={$huati_id}"];
+        //页面列表默认展示的表头参数
         $this->pageButton[] = array('title' => '+添加', 'onclick' => "saveHuatiCategory({$huati_id})");
 
         $this->allSelected = false;
 
         $this->pageKeyList = ['id', 'title', 'sort_id', 'created_at', 'DOACTION'];
         $map['huati_id']   = $huati_id;
-        $homeWorkInfo      = M("dk_huati_category")->where($map)->order("sort_id asc,id asc")->findPage(10);
+        $homeWorkInfo      = M("dk_huati_category")->where($map)->order("sort_id desc,id desc")->findPage(10);
         foreach ($homeWorkInfo['data'] as $key => $value) {
             $stype = $this->albumField($value['album_id'], 'stype');
             $homeWorkInfo['data'][$key]['DOACTION'] .= '<a href="javascript:void(0)" onclick="saveHuatiCategory(' . $value['huati_id'] . ',' . $value['id'] . ')">编辑</a> ';

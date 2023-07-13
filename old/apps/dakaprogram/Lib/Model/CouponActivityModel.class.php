@@ -26,6 +26,7 @@ class CouponActivityModel extends Model
             
             return $activity;
         }
+        return []; // 非登录用户，不返回活动信息
         $infos = $this->getValidActivities('new');
         if (empty($infos)) {
             return [];
@@ -375,11 +376,11 @@ class CouponActivityModel extends Model
     public function courseCouponInfo($uid, $price)
     {
         if (empty($uid)) {
-            $aInfos = $this->getValidActivities('new');
-            $newActivity = is_array($aInfos) ? $aInfos[0] : false;
+            //$aInfos = $this->getValidActivities('new');
+            //$newActivity = is_array($aInfos) ? $aInfos[0] : false;
             return [
                 'coupon_num' => 0,
-                'coupon_title' => $newActivity ? $newActivity['banner_doc'] : '',
+                'coupon_title' => '',//$newActivity ? $newActivity['banner_doc'] : '',
                 'max_discount' => 0,
                 'coupon_list' => [],
             ];

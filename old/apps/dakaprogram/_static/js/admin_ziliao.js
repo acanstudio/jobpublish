@@ -131,7 +131,7 @@ delHuatiCategory = function(id) {
             $.post(U('dakaprogram/AdminHuati/delHuatiCategory'), {
                 id: id
             }, function(data) {
-                if (data.status == 0) {
+                if (data.status == 1) {
                     ui.success(data.info);
                     location.reload();
                 } else {
