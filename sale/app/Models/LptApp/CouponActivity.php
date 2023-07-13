@@ -13,7 +13,7 @@ class CouponActivity extends Model
 
     public function createActivityRecord($params)
     {
-        $fields = ['name', 'activity_type', 'banner_doc', 'tag_doc', 'status', 'picture_url', 'start_at', 'end_at'];
+        $fields = ['name', 'activity_type', 'banner_doc', 'jump_path', 'tag_doc', 'status', 'picture_url', 'start_at', 'end_at'];
         $data = [];
         foreach ($fields as $field) {
             $value = $params[$field] ?? '';
@@ -57,8 +57,9 @@ class CouponActivity extends Model
 
     public function updateInfo($params)
     {
-        $fields = ['name', 'banner_doc', 'tag_doc', 'status', 'picture_url'];
+        $fields = ['name', 'banner_doc', 'tag_doc', 'status', 'picture_url', 'jump_path'];
         $data = [];
+
         foreach ($fields as $field) {
             if (!isset($params[$field])) {
                 continue;
