@@ -12,6 +12,64 @@ use App\dakaprogram\Lib\Model\CouponActivityModel;
 class CouponActivityAction
 {
     /**
+     * 获取当前返利相关的信息
+     *
+     */
+    public function currentRebate()
+    {
+        $model = $this->getCouponModel();
+        $iosbutton = $model->getIosbutton();
+        $result['status'] = 1;
+
+        $auth = $this->checkAuth(false);
+        $uid = 0;
+        if (!empty($auth)) {
+            $user = $this->getUserInfo();
+            $uid = $user['uid'];
+        }
+
+        $result = [
+            'info' => 'success',
+            'data' => [
+                'iosbutton' => $iosbutton, 
+                'rebateInfo' => [],
+            ],
+        ];
+        echo json_encode($result);exit;
+    }
+
+    /**
+     * 课程券消息推送，用户有未使用的课程券时，提醒用户及时使用
+     *
+     */
+    public function couponNotice()
+    {
+        $auth = $this->checkAuth();
+        $model = $this->getCouponModel();
+        $user = $this->getUserInfo();
+        $couponData = $model->getMyValidCoupons($user['uid'], 'full');
+        $coupons = $couponData['coupons'];
+        $result = [
+            'status' => 1,
+            'info' => 'success',
+        ];
+        if (empty($coupons)) {
+            $result['data'] = ['noNotice' => 1];
+            echo json_encode($result);exit;
+        }
+        $fullMoney = 0;
+        foreach ($coupons as $coupon) {
+            $fullMoney += $coupon['money'];
+        }
+        $result['data'] = [
+            'noNotice' => 0,
+            'myCouponNum' => $couponData['myCouponNum'],
+            'fullMoney' => $fullMoney,
+        ];
+        echo json_encode($result);exit;
+    }
+
+    /**
      * 当前可用优惠券
      *
      */
@@ -99,8 +157,9 @@ class CouponActivityAction
     {
         $model = new CouponActivityModel();
         $uid = intval($_REQUEST['mid']);
+        $fromPage = $_REQUEST['from_page'];
 
-        $courses = $model->getCourseDatas($uid);
+        $courses = $model->getCourseDatas($uid, $fromPage);
         $result['info'] = 'success';
         $result['data']['courses'] = $courses;
         $result['status'] = 1;
@@ -158,9 +217,10 @@ class CouponActivityAction
         }
 
         $activity = $model->getPointTypeInfo($userType, $uid);
+        $jumpPath = $activity ? $activity['jump_path'] : ''; // '/coursePkg/main/main?id=1&channel=share'
         $result = [
             'info' => 'success',
-            'data' => ['type' => $userType, 'iosbutton' => $iosbutton, 'jumpPath' => '/coursePkg/main/main?id=1&channel=share', 'activity' => $activity],
+            'data' => ['type' => $userType, 'iosbutton' => $iosbutton, 'jumpPath' => $jumpPath, 'activity' => $activity],
         ];
         echo json_encode($result);exit;
     }

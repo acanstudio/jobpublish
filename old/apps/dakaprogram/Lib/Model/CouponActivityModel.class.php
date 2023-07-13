@@ -105,9 +105,10 @@ class CouponActivityModel extends Model
         return M('mini_course')->where(['is_publish' => 1])->count();
     }
 
-    public function getCourseDatas($mid)
+    public function getCourseDatas($mid, $fromPage)
     {
-        $infos = M('mini_course')->where(['is_publish' => 1])->limit(40)->select();
+        $limit = $fromPage == 'discovery' ? 4 : 50;
+        $infos = M('mini_course')->where(['is_publish' => 1])->limit($limit)->select();
         $results = [];
         $action = new MinicourseAction();
         foreach ($infos as $info) {
