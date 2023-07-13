@@ -7,25 +7,25 @@ class MinicourseAction extends ApiTokenAction
 {
     public function getcourse()
     {
-        $id                           = intval($_REQUEST['id']);
-        $mid                          = $uid                          = intval($_REQUEST['mid']);
-        $rs                           = M('mini_course')->find($id);
-        $ajaxreturn['id']             = $rs['id'];
+        $id               = intval($_REQUEST['id']);
+        $mid              = $uid              = intval($_REQUEST['mid']);
+        $rs               = M('mini_course')->find($id);
+        $ajaxreturn['id'] = $rs['id'];
 
-        $low_price = $this->lowPrice($id);
-        $high_price     = $this->highPrice($id);
+        $low_price  = $this->lowPrice($id);
+        $high_price = $this->highPrice($id);
 
         // coupon-info v3.0.2
-        $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
+        $model        = new \App\dakaprogram\Lib\Model\CouponActivityModel();
         $realLowPrice = $this->realLowPrice($id, $uid);
-        $couponData = $model->courseCouponInfo($mid, 0);
+        $couponData   = $model->courseCouponInfo($mid, 0);
         if (empty($realLowPrice)) {
             $couponData['coupon_title'] = '';
-            $ajaxreturn['coupon_info'] = $couponData;
+            $ajaxreturn['coupon_info']  = $couponData;
         } else {
             $realHighPrice = $this->realHighPrice($id, $uid);
-            $lowCoupon = $model->courseCouponInfo($mid, $realLowPrice);
-            $highCoupon = $realLowPrice == $realHighPrice ? $lowCoupon : $model->courseCouponInfo($mid, $realHighPrice);
+            $lowCoupon     = $model->courseCouponInfo($mid, $realLowPrice);
+            $highCoupon    = $realLowPrice == $realHighPrice ? $lowCoupon : $model->courseCouponInfo($mid, $realHighPrice);
             if ($lowCoupon['coupon_num']) {
                 $low_price = $realLowPrice - $lowCoupon['max_discount'];
                 $low_price = $low_price <= 0 ? 0.01 : $low_price;
@@ -94,6 +94,7 @@ class MinicourseAction extends ApiTokenAction
         $map['_complex']  = $where;
         $map['course_id'] = $id;
         $map['is_hide']   = 0;
+        $map['created_at'] = ['elt', date('Y-m-d H:i:s')];
         $count            = M('mini_course_evaluation')->where($map)->count();
         $date2            = date('Y-m-d');
         $date1            = date('2023-04-26');
@@ -120,16 +121,16 @@ class MinicourseAction extends ApiTokenAction
     {
         $data['course_id']  = $id;
         $data['is_publish'] = 1;
-        $sql = "SELECT * FROM `el_mini_course_sku` WHERE `course_id` = {$id} AND `is_publish` = 1 AND `id` NOT IN (SELECT `course_sku_id` FROM `el_mini_course_order` WHERE `uid` = {$uid} AND `course_id` = {$id} AND `pay_status` = 3) ORDER BY `price` ASC;";
-        $sku = M()->query($sql);
+        $sql                = "SELECT * FROM `el_mini_course_sku` WHERE `course_id` = {$id} AND `is_publish` = 1 AND `id` NOT IN (SELECT `course_sku_id` FROM `el_mini_course_order` WHERE `uid` = {$uid} AND `course_id` = {$id} AND `pay_status` = 3) ORDER BY `price` ASC;";
+        $sku                = M()->query($sql);
         return $sku ? $sku[0]['price'] : 0;
     }
     public function realHighPrice($id = 0, $uid = 0)
     {
         $data['course_id']  = $id;
         $data['is_publish'] = 1;
-        $sql = "SELECT * FROM `el_mini_course_sku` WHERE `course_id` = {$id} AND `is_publish` = 1 AND `id` NOT IN (SELECT `course_sku_id` FROM `el_mini_course_order` WHERE `uid` = {$uid} AND `course_id` = {$id} AND `pay_status` = 3) ORDER BY `price` DESC;";
-        $sku = M()->query($sql);
+        $sql                = "SELECT * FROM `el_mini_course_sku` WHERE `course_id` = {$id} AND `is_publish` = 1 AND `id` NOT IN (SELECT `course_sku_id` FROM `el_mini_course_order` WHERE `uid` = {$uid} AND `course_id` = {$id} AND `pay_status` = 3) ORDER BY `price` DESC;";
+        $sku                = M()->query($sql);
         return $sku ? $sku[0]['price'] : 0;
     }
     public function lowPrice($id = 0)
@@ -159,15 +160,20 @@ class MinicourseAction extends ApiTokenAction
             $where['pid']         = $value['id'];
             $where['is_del']      = 0;
             $where['course_id']   = $id;
+            $is_try               = 0;
             $rs[$key]['datalist'] = M('mini_course_section')->field('id,title,is_try,homework_info,tcvideo_id')->where($where)->order('sort_id asc,id asc')->select() ?: [];
             foreach ($rs[$key]['datalist'] as $kk => $vv) {
                 $rs[$key]['datalist'][$kk]['status']      = $vv['is_try'] == 1 ? 1 : 2;
                 $rs[$key]['datalist'][$kk]['is_homework'] = !empty($vv['homework_info']) ? 1 : 0;
                 $rs[$key]['datalist'][$kk]['fileid']      = M('n_zy_tcvideo')->where(['id' => $vv['tcvideo_id']])->getField('fileid');
+                if ($rs[$key]['datalist'][$kk]['status'] == 1) {
+                    $is_try++;
+                }
             }
             $rs[$key]['update_course_num'] = $this->updateCourseNum($value['id'], $id);
             $rs[$key]['total_course_num']  = $this->totalCourseNum($value['id'], $id);
             $rs[$key]['stype']             = $this->stype($rs[$key]['update_course_num'], $rs[$key]['total_course_num']);
+            $rs[$key]['status']            = $is_try > 0 ? 1 : 2;
         }
         $res['course'] = $rs;
 
@@ -365,6 +371,7 @@ class MinicourseAction extends ApiTokenAction
     public function countEvaluation($id)
     {
         $where['course_id'] = $id;
+        $where['created_at'] = ['elt', date('Y-m-d H:i:s')];
         $rees               = M('mini_course_evaluation')->field('quick_ids')->where($where)->select();
         $res                = '';
         foreach ($rees as $key => $value) {
@@ -387,7 +394,7 @@ class MinicourseAction extends ApiTokenAction
                 unset($va[$kz]);
             }
         }
-        usort($va, function($a1, $a2) {
+        usort($va, function ($a1, $a2) {
             return $a1['num'] < $a2['num'];
         });
         return array_values($va);
@@ -407,12 +414,12 @@ class MinicourseAction extends ApiTokenAction
         $id  = intval($_REQUEST['course_id']);
         $mid = intval($_REQUEST['mid']);
 
-        $where['star']    = array('egt', 3);
-        $where['uid']     = $mid;
-        $where['_logic']  = 'or';
-        $map['_complex']  = $where;
-        $map['course_id'] = $id;
-        $map['is_hide']   = 0;
+        $where['star']     = array('egt', 3);
+        $where['uid']      = $mid;
+        $where['_logic']   = 'or';
+        $map['_complex']   = $where;
+        $map['course_id']  = $id;
+        $map['is_hide']    = 0;
         $map['created_at'] = ['elt', date('Y-m-d H:i:s')];
         //$map['quick_ids'] = array('exp', 'not null');
         $res = M('mini_course_evaluation')->field('id,uid,review_content,star,quick_ids,quick_title,created_at')->where('created_at', '<=', $cDate)->where($map)->order('created_at desc')->findPage(6);
@@ -498,7 +505,7 @@ class MinicourseAction extends ApiTokenAction
         // $ajaxreturn['buy_status']     = $this->coursebuyState($id, $mid);
 
         // coupon-info v3.0.2
-        $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
+        $model                     = new \App\dakaprogram\Lib\Model\CouponActivityModel();
         $ajaxreturn['coupon_info'] = $model->courseCouponInfo($mid, $this->realLowPrice($mini_course_section['course_id'], $uid));
         // end coupon-info v3.0.2
 
