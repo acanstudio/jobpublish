@@ -22,10 +22,6 @@ class MinicourseAction extends ApiTokenAction
         if (empty($realLowPrice)) {
             $couponData['coupon_title'] = '';
             $ajaxreturn['coupon_info'] = $couponData;
-            $ajaxreturn['button_info'] = [
-                'buttonStr' => '立即购买',
-                'noCoupon' => 1,
-            ];
         } else {
             $realHighPrice = $this->realHighPrice($id, $uid);
             $lowCoupon = $model->courseCouponInfo($mid, $realLowPrice);
@@ -39,20 +35,42 @@ class MinicourseAction extends ApiTokenAction
                 $high_price = $high_price <= 0 ? 0.01 : $high_price;
             }
             $ajaxreturn['coupon_info'] = $couponData;
-            $ajaxreturn['button_info'] = [
-                'buttonStr' => '券后' . min($hight_price, $low_price) . '元 立即购买',
-                'noCoupon' => 0,
-                'countdown' => 1,
-                'expireAt' => date('Y-m-d H:i:s', time() + 86400 - rand(1, 1000)),
-            ];
+        }
+        $ajaxreturn['button_info'] = [
+            'buttonStr' => '立即购买',
+            'noCoupon' => 1,
+        ];
+        if ($couponData['coupon_num'] > 0) {
+            $miniorderAction = new MiniorderAction();
+            $skuDatas = $miniorderAction->skufixlist($id, $mid, 0);
+            $skuDatas = $model->formatSkuPrice($couponData, $skuDatas);
+            $skuData = $skuDatas ? $skuDatas[0] : [];
+            if (!empty($skuData) && $skuData['coupon_valid']) {
+                $skuCoupon = M('coupon_activity_user')->where(['id' => $skuData['coupon_id']])->find();
+                $endTime = strtotime($skuCoupon['end_at']);
+                $now = time();
+                $diff = $endTime - $now;
+                $ajaxreturn['button_info'] = [
+                    'buttonStr' => '券后' . $skuData['coupon_price'] . '元 立即购买',
+                    'noCoupon' => 0,
+                    'dayNum' => $diff > 86400 ? ceil($diff / 86400) : 0,
+                    'expireAt' => $endTime,
+                    'couponId' => $skuData['coupon_id'],
+                ];
+            }
         }
         // end coupon-info v3.0.2
+        $ajaxreturn['rebate_info'] = [
+            'is_rebate' => $rs['is_rebate'],
+            'promotion_title' => $rs['promotion_title'],
+            'promotion_img' => $rs['promotion_img'],
+        ];
 
         $ajaxreturn['low_price']      = $low_price;
         $ajaxreturn['high_price']     = $high_price;
         $ajaxreturn['is_one_price']   = $low_price == $high_price ? 1 : 0;
         $ajaxreturn['one_price']      = $low_price;
-        $ajaxreturn['bofang_num']     = $this->turnToW($rs['real_click'] + $rs['market_click'] * 10000);
+        $ajaxreturn['bofang_num']     = $this->turnToW($rs['real_click'] + $rs['market_click']);// * 10000);
         $ajaxreturn['progress']       = $this->progressDx($id);
         $ajaxreturn['section_num']    = $this->sectionNum($id);
         $ajaxreturn['try_num']        = $this->tryNum($id);
@@ -73,12 +91,21 @@ class MinicourseAction extends ApiTokenAction
 
     protected function getPointIntro($mid, $course)
     {
-        $huatiRecord = true;//M('dk_huati')->where(['uid' => $mid])->find();
+        $huatiRecord = M('dk_huati_user')->where(['uid' => $mid])->order('created_at asc')->find();
         if (empty($huatiRecord)) {
             return $course['course_intro'];
         }
-        $pointIntro = ['简介1', '简介2', '简介3'][rand(0, 2)];
-        return $pointIntro;
+        $mhWhere = ['course_id' => $course['id'], 'huati_id' => $huatiRecord['huati_id'], 'is_del' => 0];
+        $materialHuati = M('mini_course_material_huati')->where($mhWhere)->find();
+        if (empty($materialHuati)) {
+            return $course['course_intro'];
+        }
+
+        $courseMaterial = M('mini_course_material')->where(['id' => $materialHuati['material_id']])->find();
+        if (empty($courseMaterial) || empty($courseMaterial['description'])) {
+            return $course['course_intro'];
+        }
+        return $courseMaterial['description'];
     }
 
     public function coursebuyState($id = 0, $mid = 0)
@@ -444,7 +471,7 @@ class MinicourseAction extends ApiTokenAction
         $map['is_hide']   = 0;
         $map['created_at'] = ['elt', date('Y-m-d H:i:s')];
         //$map['quick_ids'] = array('exp', 'not null');
-        $res = M('mini_course_evaluation')->field('id,uid,review_content,star,quick_ids,quick_title,created_at')->where('created_at', '<=', $cDate)->where($map)->order('created_at desc')->findPage(6);
+        $res = M('mini_course_evaluation')->field('id,uid,review_content,star,quick_ids,quick_title,created_at,sku_buy_time')->where('created_at', '<=', $cDate)->where($map)->order('created_at desc')->findPage(6);
         $p   = $_REQUEST['p'];
         if ($p > $res['totalPages']) {
             $res['data'] = array();
@@ -466,11 +493,23 @@ class MinicourseAction extends ApiTokenAction
         }
 
         if (empty($evaluation['sku_buy_time'])) {
-            return rand(1,10);
+            $studyDay = rand(1,10);
+            $saveData = [
+                'id' => $evaluation['id'],
+                'point_study_day' => $studyDay,
+            ];
+            M('mini_course_evaluation')->save($saveData);
+            return $studyDay;
         }
 
-        $diff = strtotime($evaluation['sku_buy_time']) - strtotime($evaluation['created_at']);
-        return ceil($diff / 86400);
+        $diff = strtotime($evaluation['created_at']) - strtotime($evaluation['sku_buy_time']);
+        $studyDay = ceil($diff / 86400);
+        $saveData = [
+            'id' => $evaluation['id'],
+            'point_study_day' => $studyDay,
+        ];
+        M('mini_course_evaluation')->save($saveData);
+        return $studyDay;
     }
 
     public function sectiondakalist()

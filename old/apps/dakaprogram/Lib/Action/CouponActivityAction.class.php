@@ -65,6 +65,8 @@ class CouponActivityAction
             'noNotice' => 0,
             'myCouponNum' => $couponData['myCouponNum'],
             'fullMoney' => $fullMoney,
+            'activityId' => $couponData['activityId'],
+            'jumpPath' => $couponData['jumpPath'],
         ];
         echo json_encode($result);exit;
     }

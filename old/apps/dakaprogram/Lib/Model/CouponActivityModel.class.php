@@ -68,6 +68,7 @@ class CouponActivityModel extends Model
             'tagDoc' => $activity && $activity['status'] == 1 ? $activity['tag_doc'] : '',
             'bannerDoc' => $activity && $activity['status'] == 1 ? $activity['banner_doc'] : '',
             'activityId' => $activity ? $activity['id'] : 0,
+            'jumpPath' => $activity ? $activity['jump_path'] : '',
         ];
         if ($type == 'simple') {
             return $baseData;
@@ -121,7 +122,7 @@ class CouponActivityModel extends Model
                 'high_price' => $highPrice,
                 'is_one_price' => $highPrice ? 1 : 0,
                 'one_price' => $lowPrice,
-                'bofang_num' => $action->turnToW($info['real_click'] + $info['market_click'] * 10000),
+                'bofang_num' => $action->turnToW($info['real_click'] + $info['market_click']),
                 'progress' => $action->progressDx($id),
                 'section_num' => $action->sectionNum($id),
                 'try_num' => $action->tryNum($id),
@@ -503,13 +504,23 @@ class CouponActivityModel extends Model
 
     public function formatSkuPrice($couponData, $skuDatas)
     {
-        foreach ($skuDatas as & $skuData) {
+        $couponPrice = $lowIndex = 0;
+        foreach ($skuDatas as $index => & $skuData) {
             $skuCoupon = $this->getSkuCoupon($skuData['price'], $couponData['coupon_num'], $couponData['coupon_list']);
             $skuData['price'] = $skuData['price'] == intval($skuData['price']) ? intval($skuData['price']) : $skuData['price'];
             $skuData['coupon_valid'] = $skuCoupon['coupon_valid'];
             $skuData['coupon_price'] = $skuCoupon['coupon_price'];
             $skuData['coupon_money'] = $skuCoupon['coupon_money'];
             $skuData['coupon_id'] = $skuCoupon['coupon_id'];
+            if ($skuData['coupon_valid'] && (empty($couponPrice) || $skuData['coupon_price'] < $couponPrice)) {
+                $couponPrice = $skuData['coupon_price'];
+                $lowIndex = $index;
+                $lowSku = $skuData;
+            }
+        }
+        if ($lowIndex > 0) {
+            unset($skuDatas[$lowIndex]);
+            array_unshift($skuDatas, $lowSku);
         }
         return $skuDatas;
     }

@@ -20,11 +20,11 @@ class HuatiAlbumAction extends ApiTokenAction
     }
     public function searchlist()
     {
-        $mid      = intval($_REQUEST['mid']);
-        $huati_id = intval($_REQUEST['huati_id']);
+        $mid            = intval($_REQUEST['mid']);
+        $huati_id       = intval($_REQUEST['huati_id']);
         $huati_category = $_REQUEST['huati_category'];
-        $keyword  = $_REQUEST['keyword'];
-        $type     = $_REQUEST['type'];
+        $keyword        = $_REQUEST['keyword'];
+        $type           = $_REQUEST['type'];
         // $huati_id         = 88;
         // $mid              = 111836;
         $data['a.huati_id'] = $huati_id;
@@ -58,16 +58,14 @@ class HuatiAlbumAction extends ApiTokenAction
     public function datalist()
     {
         $huati_id = intval($_REQUEST['huati_id']);
-        $preSql = "UPDATE `el_dk_huati_category` SET `album_num` = 0 WHERE `huati_id` = {$huati_id};";
-        M()->query($preSql);
-        $preSql = "UPDATE `el_dk_huati_category` AS `hc`, (SELECT `ha`.`huati_category`, COUNT(*) AS `count` FROM `el_dk_huati_album` as `ha`, `el_dk_album` AS `a` WHERE `ha`.`huati_id` = {$huati_id} AND `ha`.`huati_category` > 0 AND `a`.`id` = `ha`.`album_id` AND `a`.`is_publish` = 1 GROUP BY `ha`.`huati_category`) AS `huaa` SET `hc`.`album_num` = `huaa`.`count` WHERE `hc`.`id` = `huaa`.`huati_category`;";
-        M()->query($preSql);
+        $huatiInfo = M('dk_huati')->where(['id' => $huati_id])->find();
+        $huatiKfPic = getImageUrlByAttachId($huatiInfo['kf_pic']);
 
-        $mid      = intval($_REQUEST['mid']);
-        $withCategory = intval($_REQUEST['with_category']);
-        $huatiCategory     = $_REQUEST['huati_category'];
+        $mid           = intval($_REQUEST['mid']);
+        $withCategory  = intval($_REQUEST['with_category']);
+        $huatiCategory = $_REQUEST['huati_category'];
         //var_dump($huatiCategory);
-        $type     = $_REQUEST['type'];
+        $type = $_REQUEST['type'];
         // $huati_id         = 88;
         // $mid              = 111836;
         $data['huati_id'] = $huati_id;
@@ -78,27 +76,31 @@ class HuatiAlbumAction extends ApiTokenAction
         }
 
         $categories = [];
+        $cateSql    = '';
         if ($type != 'lianziting') {
-            $huatiCategories = M('dk_huati_category')->where("huati_id = {$huati_id} AND `album_num` > 0")->order('sort_id desc')->select();
+            $huatiCategories = M('dk_huati_category')->where("huati_id = {$huati_id} ")->order('sort_id desc')->select();
+            $cateSql         = M()->getLastSql();
             foreach ($huatiCategories as $hCategory) {
+                $aCount = M()->query("SELECT * FROM `el_dk_huati_album` AS `ha`, `el_dk_album` AS `a` WHERE `ha`.`huati_id` = {$huati_id} AND `a`.`id` = `ha`.`album_id` AND `a`.`is_publish` = 1 AND `ha`.`huati_category` = {$hCategory['id']} AND `ha`.`ptype` = 1; ");
+                if (empty($aCount)) {
+                    continue;
+                }
+
                 if (is_null($huatiCategory)) {
                     $huatiCategory = $hCategory['id'];
                 }
                 $categories[] = ['id' => $hCategory['id'], 'title' => $hCategory['title']];
             }
-            $noCategoryCount = M('dk_huati_album')->where("huati_id = {$huati_id} AND `huati_category` = 0")->count();
-            if ($noCategoryCount && count($categories) > 0) {
+            $noCategoryCount = M()->query("SELECT * FROM `el_dk_huati_album` AS `ha`, `el_dk_album` AS `a` WHERE `ha`.`huati_id` = {$huati_id} AND `a`.`id` = `ha`.`album_id` AND `a`.`is_publish` = 1 AND `ha`.`huati_category` = 0 AND `ha`.`ptype` = 1; ");
+            if (!empty($noCategoryCount) && count($categories) > 0) {
                 $categories[] = ['id' => 0, 'title' => '其他'];
             }
-    
+
             if (isset($huatiCategory) && $withCategory) {
                 $data['huati_category'] = intval($huatiCategory);
             }
         }
         $rs = M('dk_huati_album')->where($data)->order('sort_id asc,id asc')->select();
-        $log_file = "./data/upload/dakaprogram/logs/" . date('Y-m-d-H').'.txt';
-        $lStr = "\r\n ---album-list data --- \r\n" . M()->getLastSql() . "\r\n\r\n";
-        file_put_contents($log_file, $lStr, FILE_APPEND);
 
         //$lastRead = $this->lastRead($huati_id, $mid);
         foreach ($rs as $key => &$value) {
@@ -113,13 +115,16 @@ class HuatiAlbumAction extends ApiTokenAction
             if ($rs[$key]['is_publish'] == 0) {
                 unset($rs[$key]);
             }
-
         }
         $rs = array_values($rs);
         // array_multisort(array_column($rs, 'sort_use'), SORT_DESC, $rs);
         $album_id = intval($rs[0]['album_id']);
 
-        $result['data']   = $withCategory ? ['categories' => $rs ? $categories : [], 'infos' => $rs] : $rs;
+        $log_file = './data/upload/dakaprogram/huati.txt';
+        $lStr     = "\r\n ---album-list data --- \r\n" . date('Y-m-d H:i:s') . '-' . $mid . '-' . $huati_id . '==' . count($categories) . '==' . count($rs) . '==' . $huatiCategory . '--' . $cateSql . "\r\n\r\n";
+        //file_put_contents($log_file, $lStr, FILE_APPEND);
+
+        $result['data']   = $withCategory ? ['huati_kf_pic' => $huatiKfPic, 'categories' => !empty($rs) ? $categories : [], 'infos' => $rs] : $rs;
         $result['info']   = "查询成功";
         $result['status'] = 1;
         $this->ajaxreturn($result['data'], $result['info'], $result['status']);
@@ -260,7 +265,7 @@ class HuatiAlbumAction extends ApiTokenAction
         $data['is_del']     = 0;
         $data['is_chapter'] = 0;
         $rs                 = M('dk_album_data')->where($data)->field('id,tcvideo_id,album_id,title')->order('sort_id asc,id asc')->select();
-       // echo M()->getLastSql();
+        // echo M()->getLastSql();
         $dk_album = M('dk_album')->where(['id' => $album_id])->find();
         foreach ($rs as $key => &$value) {
             $rs[$key]['title']        = $value['title'];
@@ -292,10 +297,18 @@ class HuatiAlbumAction extends ApiTokenAction
         $data['x_url']            = M('dk_cock')->where(['code' => 'album_x'])->getField('ext_data') ?: "";
         $this->addRealView($album_id);
         $data['if_daka_count'] = M('homework_submit')->where(['uid' => $mid])->count() > 0 ? 1 : 0;
+        $data['albumbox']      = $this->albumbox($album_id);
         $result['data']        = $data;
         $result['info']        = "查询成功";
         $result['status']      = 1;
         $this->ajaxreturn($result['data'], $result['info'], $result['status']);
+    }
+    public function albumbox($album_id = 0)
+    {
+        $where['type']     = array('gt', 0);
+        $where['album_id'] = $album_id;
+        $rs                = M('dk_album_box')->where($where)->order('id desc')->find();
+        return $rs;
     }
     public function addRealView($album_id = 0)
     {
