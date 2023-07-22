@@ -109,7 +109,7 @@ class CouponActivityModel extends Model
     public function getCourseDatas($mid, $fromPage)
     {
         $limit = $fromPage == 'discovery' ? 4 : 50;
-        $infos = M('mini_course')->where(['is_publish' => 1])->limit($limit)->select();
+        $infos = M('mini_course')->where(['is_publish' => 1])->order('id desc')->limit($limit)->select();
         $results = [];
         $action = new MinicourseAction();
         foreach ($infos as $info) {
@@ -122,7 +122,7 @@ class CouponActivityModel extends Model
                 'high_price' => $highPrice,
                 'is_one_price' => $highPrice ? 1 : 0,
                 'one_price' => $lowPrice,
-                'bofang_num' => $action->turnToW($info['real_click'] + $info['market_click']),
+                'bofang_num' => $action->turnToW($info['real_click'] + $info['market_click'] + $this->getCourseOrderNum($id)),
                 'progress' => $action->progressDx($id),
                 'section_num' => $action->sectionNum($id),
                 'try_num' => $action->tryNum($id),
@@ -640,5 +640,19 @@ class CouponActivityModel extends Model
             return true;
         }
         return false;
+    }
+
+    public function formatPrice($price)
+    {
+        $price = round($price, 2);
+        $price = intval($price) == $price ? intval($price) : $price;
+        return $price;
+    }
+
+    public function getCourseOrderNum($courseId)
+    {
+        $infos = M('mini_course_order')->where(['course_id' => $courseId, 'pay_status' => 3])->group('uid')->select();
+        $count = count($infos);
+        return $count;
     }
 }

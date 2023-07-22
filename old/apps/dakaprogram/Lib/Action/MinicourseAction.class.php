@@ -12,14 +12,37 @@ class MinicourseAction extends ApiTokenAction
         $rs                           = M('mini_course')->find($id);
         $ajaxreturn['id']             = $rs['id'];
 
-        $low_price = $this->lowPrice($id);
-        $high_price     = $this->highPrice($id);
+        $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
+        $low_price = $model->formatPrice($this->lowPrice($id));
+        $high_price     = $model->formatPrice($this->highPrice($id));
 
         // coupon-info v3.0.2
-        $model = new \App\dakaprogram\Lib\Model\CouponActivityModel();
-        $realLowPrice = $this->realLowPrice($id, $uid);
+        //$realLowPrice = $this->realLowPrice($id, $uid);
         $couponData = $model->courseCouponInfo($mid, 0);
-        if (empty($realLowPrice)) {
+        $skuDatas = [];
+        if ($couponData['coupon_num'] > 0) {
+            $miniorderAction = new MiniorderAction();
+            $skuDatas = $miniorderAction->skufixlist($id, $mid, 0);
+            $skuDatas = $model->formatSkuPrice($couponData, $skuDatas);
+            $prices = [];
+            $haveCoupon = false;
+            foreach ($skuDatas as $skuData) {
+                $couponValid = $skuData['coupon_valid'];
+                $haveCoupon = $haveCoupon ? $haveCoupon : $couponValid;
+                $prices[] = $couponValid ? $skuData['coupon_price'] : $skuData['price'];
+            }
+
+            if ($haveCoupon) {
+                sort($prices);
+                $low_price = $prices[0];
+                $high_price = array_pop($prices);
+            } else {
+                $couponData['coupon_title'] = '';
+                $low_price = $this->realLowPrice($id, $uid);
+                $high_price = $this->realHighPrice($id, $uid);
+            }
+        }
+        /*if (empty($realLowPrice)) {
             $couponData['coupon_title'] = '';
             $ajaxreturn['coupon_info'] = $couponData;
         } else {
@@ -35,15 +58,37 @@ class MinicourseAction extends ApiTokenAction
                 $high_price = $high_price <= 0 ? 0.01 : $high_price;
             }
             $ajaxreturn['coupon_info'] = $couponData;
-        }
+        }*/
+        $ajaxreturn['coupon_info'] = $couponData;
         $ajaxreturn['button_info'] = [
             'buttonStr' => '立即购买',
             'noCoupon' => 1,
         ];
-        if ($couponData['coupon_num'] > 0) {
-            $miniorderAction = new MiniorderAction();
-            $skuDatas = $miniorderAction->skufixlist($id, $mid, 0);
-            $skuDatas = $model->formatSkuPrice($couponData, $skuDatas);
+        // end coupon-info v3.0.2
+        $ajaxreturn['rebate_info'] = [
+            'is_rebate' => $rs['is_rebate'],
+            'promotion_title' => $rs['promotion_title'],
+            'promotion_img' => $rs['promotion_img'],
+        ];
+
+        $ajaxreturn['low_price']      = $low_price;
+        $ajaxreturn['high_price']     = $high_price;
+        $ajaxreturn['is_one_price']   = $low_price == $high_price ? 1 : 0;
+        $ajaxreturn['one_price']      = $low_price;
+        $ajaxreturn['bofang_num']     = $this->turnToW($rs['real_click'] + $rs['market_click'] + $model->getCourseOrderNum($rs['id']));// * 10000);
+        $ajaxreturn['progress']       = $this->progressDx($id);
+        $ajaxreturn['section_num']    = $this->sectionNum($id);
+        $ajaxreturn['try_num']        = $this->tryNum($id);
+        $ajaxreturn['evaluation_num'] = $this->evaluationNum($id, $mid);
+        $ajaxreturn['course_title']   = $rs['course_title'];
+        $ajaxreturn['course_intro']   = $this->getPointIntro($mid, $rs);
+        $ajaxreturn['share_title']    = $rs['share_title'];
+        $ajaxreturn['share_pic']      = $rs['share_pic'];
+        $ajaxreturn['kf_url']         = $rs['kf_pic'];
+        $ajaxreturn['cover_pic']      = $rs['cover_pic'];
+        $ajaxreturn['buy_status']     = $this->coursebuyState($id, $mid);
+
+        if ($ajaxreturn['buy_status'] != 3 && $couponData['coupon_num'] > 0) {
             $skuData = $skuDatas ? $skuDatas[0] : [];
             if (!empty($skuData) && $skuData['coupon_valid']) {
                 $skuCoupon = M('coupon_activity_user')->where(['id' => $skuData['coupon_id']])->find();
@@ -59,29 +104,7 @@ class MinicourseAction extends ApiTokenAction
                 ];
             }
         }
-        // end coupon-info v3.0.2
-        $ajaxreturn['rebate_info'] = [
-            'is_rebate' => $rs['is_rebate'],
-            'promotion_title' => $rs['promotion_title'],
-            'promotion_img' => $rs['promotion_img'],
-        ];
 
-        $ajaxreturn['low_price']      = $low_price;
-        $ajaxreturn['high_price']     = $high_price;
-        $ajaxreturn['is_one_price']   = $low_price == $high_price ? 1 : 0;
-        $ajaxreturn['one_price']      = $low_price;
-        $ajaxreturn['bofang_num']     = $this->turnToW($rs['real_click'] + $rs['market_click']);// * 10000);
-        $ajaxreturn['progress']       = $this->progressDx($id);
-        $ajaxreturn['section_num']    = $this->sectionNum($id);
-        $ajaxreturn['try_num']        = $this->tryNum($id);
-        $ajaxreturn['evaluation_num'] = $this->evaluationNum($id, $mid);
-        $ajaxreturn['course_title']   = $rs['course_title'];
-        $ajaxreturn['course_intro']   = $this->getPointIntro($mid, $rs);
-        $ajaxreturn['share_title']    = $rs['share_title'];
-        $ajaxreturn['share_pic']      = $rs['share_pic'];
-        $ajaxreturn['kf_url']         = $rs['kf_pic'];
-        $ajaxreturn['cover_pic']      = $rs['cover_pic'];
-        $ajaxreturn['buy_status']     = $this->coursebuyState($id, $mid);
         //$ajaxreturn['buy_status']     = 3;
         $ajaxreturn['iosbutton']  = $this->iosbutton();
         $ajaxreturn['is_publish'] = $rs['is_publish'];
@@ -493,7 +516,7 @@ class MinicourseAction extends ApiTokenAction
         }
 
         if (empty($evaluation['sku_buy_time'])) {
-            $studyDay = rand(1,10);
+            $studyDay = rand(1, 50);
             $saveData = [
                 'id' => $evaluation['id'],
                 'point_study_day' => $studyDay,

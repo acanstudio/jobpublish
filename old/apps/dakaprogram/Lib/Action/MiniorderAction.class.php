@@ -62,6 +62,7 @@ class MiniorderAction extends ApiTokenAction
         $res                 = M('mini_course_order')->field('id,course_sku_id')->where($where)->select();
         $count               = count($res);
         $chapterData         = M('mini_course_section')->field('id,title')->where($section)->select();
+        $couponModel = new \App\dakaprogram\Lib\Model\CouponActivityModel();
         if (empty($count)) {
             $datacommon['course_id']            = $id;
             $datacommon['special_sell']         = $special_sell;
@@ -70,6 +71,7 @@ class MiniorderAction extends ApiTokenAction
             $minir                              = M('mini_course_sku')->field('id,sku_name,price,limit_price,fucai_title,is_fucai,chapter_ids')->where($datacommon)->order('sort_id asc,id desc')->select();
             foreach ($minir as $key => $value) {
                 $minir[$key]['chapter'] = $this->chapterData($value['chapter_ids'], $chapterData);
+                $minir[$key]['price'] = $couponModel->formatPrice($value['price']);
             }
             return $minir;
         } else {
@@ -92,6 +94,7 @@ class MiniorderAction extends ApiTokenAction
 
             foreach ($minir as $key => $value) {
                 $minir[$key]['chapter'] = $this->chapterData($value['chapter_ids'], $chapterData);
+                $minir[$key]['price'] = $couponModel->formatPrice($value['price']);
             }
             return $minir;
 
