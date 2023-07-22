@@ -1,1 +1,8 @@
+apps/dakaprogram/Lib/Action/MiniorderAction.class.php
+apps/dakaprogram/Lib/Action/HuatiAlbumAction.class.php
 apps/dakaprogram/Lib/Action/MinicourseAction.class.php
+apps/dakaprogram/Lib/Action/CouponActivityAction.class.php
+apps/dakaprogram/Lib/Action/DiscoveryAction.class.php
+
+apps/dakaprogram/Lib/Model/CouponActivityModel.class.php
+apps/dakaprogram/Lib/Model/DiscoveryModel.class.php
